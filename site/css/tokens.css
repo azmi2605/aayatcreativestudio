@@ -1,0 +1,130 @@
+/**
+ * site/css/tokens.css
+ * Design Tokens for Aayat Creative Studio
+ * Source of truth: DESIGN.md sections 4, 5, 6, 13
+ * All properties prefixed with --cs- (AGENTS 3.2)
+ */
+
+:root {
+  /* ==========================================================================
+     1. Color Palette (DESIGN 4.1, 4.2)
+     ========================================================================== */
+  --cs-color-bg: #FBF8F3;            /* Warm cream page background */
+  --cs-color-surface: #FFFFFF;       /* Pure white card and header surface */
+  --cs-color-brown: #4A2512;         /* Deep studio brown - primary text & buttons */
+  --cs-color-brown-hover: #321707;   /* Darker brown for hover and pressed states */
+  --cs-color-ink-muted: #6B5A4C;     /* Secondary text, helper labels, captions */
+  --cs-color-line: #E6DDD0;          /* Subtle dividers and default borders */
+  --cs-color-line-strong: #8C7B68;   /* Input borders (>= 3:1 contrast ratio) */
+  --cs-color-gold: #C9A66B;          /* Decorative accent only: hairlines, thin rules */
+  --cs-color-gold-tint: #F3E9D6;     /* Subtle hover tint and badge fills */
+  --cs-color-gold-deep: #7D5A1B;     /* Text links and accent text (AA compliant) */
+  --cs-color-on-brown: #FBF8F3;      /* Crisp text on brown backgrounds */
+
+  /* Status and Feedback Colors */
+  --cs-color-success: #2F6B3F;
+  --cs-color-success-tint: #E3F0E6;
+  --cs-color-error: #B3261E;
+  --cs-color-error-tint: #FBE7E5;
+  --cs-color-warning: #8A5A00;
+  --cs-color-warning-tint: #FBF0D9;
+  --cs-color-info: #6B5A4C;
+
+  /* ==========================================================================
+     2. Typography Families & Scales (DESIGN 5.1, 5.2)
+     ========================================================================== */
+  --cs-font-display: 'Cormorant Garamond', Garamond, 'Times New Roman', Georgia, serif;
+  --cs-font-body: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Font Weights */
+  --cs-weight-regular: 400;
+  --cs-weight-medium: 500;
+  --cs-weight-semibold: 600;
+
+  /* Mobile Type Sizes (default) */
+  --cs-text-display: 2.75rem;        /* 44px */
+  --cs-leading-display: 1.02;
+  --cs-text-h1: 2.25rem;             /* 36px */
+  --cs-leading-h1: 1.08;
+  --cs-text-h2: 1.875rem;            /* 30px */
+  --cs-leading-h2: 1.12;
+  --cs-text-h3: 1.5rem;              /* 24px */
+  --cs-leading-h3: 1.2;
+  --cs-text-eyebrow: 0.875rem;       /* 14px */
+  --cs-leading-eyebrow: 1.4;
+  --cs-tracking-eyebrow: 0.2em;
+  --cs-text-body-lg: 1.125rem;       /* 18px */
+  --cs-leading-body-lg: 1.55;
+  --cs-text-body: 1rem;              /* 16px */
+  --cs-leading-body: 1.6;
+  --cs-text-small: 0.875rem;         /* 14px */
+  --cs-leading-small: 1.5;
+  --cs-text-label: 0.875rem;         /* 14px */
+  --cs-leading-label: 1.4;
+  --cs-text-button: 1rem;            /* 16px */
+  --cs-leading-button: 1;
+
+  /* ==========================================================================
+     3. Spacing Scale - 4px base (DESIGN 6.1)
+     ========================================================================== */
+  --cs-space-1: 0.25rem;             /* 4px */
+  --cs-space-2: 0.5rem;              /* 8px */
+  --cs-space-3: 0.75rem;             /* 12px */
+  --cs-space-4: 1rem;                /* 16px */
+  --cs-space-5: 1.5rem;              /* 24px */
+  --cs-space-6: 2rem;                /* 32px */
+  --cs-space-7: 3rem;                /* 48px */
+  --cs-space-8: 4rem;                /* 64px */
+  --cs-space-9: 6rem;                /* 96px */
+
+  /* Section Spacing alias */
+  --cs-section-space: var(--cs-space-7);
+
+  /* Layout Widths */
+  --cs-max-width-content: 1200px;
+  --cs-max-width-reading: 720px;
+  --cs-max-width-text: 640px;
+
+  /* ==========================================================================
+     4. Shape, Borders & Elevation (DESIGN 6.3, 6.4)
+     ========================================================================== */
+  --cs-radius-sm: 2px;
+  --cs-radius-lg: 8px;
+  --cs-radius-full: 9999px;
+
+  --cs-border-default: 1px solid var(--cs-color-line);
+  --cs-border-strong: 1px solid var(--cs-color-line-strong);
+  --cs-border-focus: 2px solid var(--cs-color-brown);
+  --cs-focus-ring-offset: 2px;
+
+  --cs-shadow-dialog: 0 10px 30px rgba(74, 37, 18, 0.12);
+  --cs-backdrop-overlay: rgba(74, 37, 18, 0.5);
+
+  /* ==========================================================================
+     5. Motion & Transitions (DESIGN 13)
+     ========================================================================== */
+  --cs-transition-fast: 150ms cubic-bezier(0.2, 0, 0, 1);
+  --cs-transition-normal: 250ms cubic-bezier(0.2, 0, 0, 1);
+  --cs-transition-slow: 350ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ==========================================================================
+   Desktop Type Scale Adjustments (>= 1024px)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  :root {
+    --cs-text-display: 5rem;          /* 80px */
+    --cs-text-h1: 3.25rem;           /* 52px */
+    --cs-text-h2: 2.5rem;            /* 40px */
+    --cs-text-h3: 1.75rem;           /* 28px */
+    --cs-text-body-lg: 1.25rem;      /* 20px */
+    --cs-text-body: 1.0625rem;       /* 17px */
+    --cs-section-space: var(--cs-space-9); /* 96px between sections */
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  :root {
+    --cs-section-space: var(--cs-space-8); /* 64px between sections */
+  }
+}

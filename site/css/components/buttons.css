@@ -1,0 +1,100 @@
+/**
+ * site/css/components/buttons.css
+ * Button styles according to DESIGN.md section 8.1
+ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cs-space-2);
+  min-height: 48px;
+  min-width: 44px;
+  padding: var(--cs-space-3) var(--cs-space-5);
+  font-family: var(--cs-font-body);
+  font-size: var(--cs-text-button);
+  font-weight: var(--cs-weight-medium);
+  line-height: var(--cs-leading-button);
+  text-decoration: none;
+  border-radius: var(--cs-radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color var(--cs-transition-fast),
+              color var(--cs-transition-fast),
+              border-color var(--cs-transition-fast),
+              transform var(--cs-transition-fast);
+  white-space: nowrap;
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--cs-color-brown);
+  color: var(--cs-color-on-brown);
+  border-color: var(--cs-color-brown);
+}
+
+.btn-primary:hover {
+  background-color: var(--cs-color-brown-hover);
+  border-color: var(--cs-color-brown-hover);
+  color: var(--cs-color-on-brown);
+}
+
+.btn-primary:active {
+  background-color: var(--cs-color-brown-hover);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--cs-color-brown);
+  border-color: var(--cs-color-brown);
+}
+
+.btn-secondary:hover {
+  background-color: var(--cs-color-gold-tint);
+  color: var(--cs-color-brown-hover);
+}
+
+/* Text / Link Button */
+.btn-text {
+  background: transparent;
+  color: var(--cs-color-gold-deep);
+  min-height: auto;
+  padding: var(--cs-space-1) var(--cs-space-2);
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.btn-text:hover {
+  color: var(--cs-color-brown-hover);
+}
+
+/* Destructive Button */
+.btn-danger {
+  background-color: var(--cs-color-error);
+  color: #FFFFFF;
+  border-color: var(--cs-color-error);
+}
+
+.btn-danger:hover {
+  background-color: #8C1D18;
+  border-color: #8C1D18;
+}
+
+/* Disabled State */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background-color: var(--cs-color-line) !important;
+  color: var(--cs-color-ink-muted) !important;
+  border-color: var(--cs-color-line) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Compact Admin Button */
+.btn-compact {
+  min-height: 40px;
+  padding: var(--cs-space-2) var(--cs-space-4);
+  font-size: var(--cs-text-small);
+}

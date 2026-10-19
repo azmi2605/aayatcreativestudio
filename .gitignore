@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables & secrets (CRITICAL: NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local Supabase
+.branches/
+supabase/.temp/
+.supabase/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test & coverage artifacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Build and scratch artifacts
+dist/
+tmp/
+scratch/

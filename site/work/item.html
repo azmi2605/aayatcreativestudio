@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details — Aayat Creative Studio</title>
+  <meta name="description" content="Detailed portfolio showcase from Aayat Creative Studio.">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components/buttons.css">
+  <link rel="stylesheet" href="/css/components/header-footer.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="site-header" role="banner">
+    <div class="container site-header-inner">
+      <a href="/" class="brand-link" aria-label="Aayat Creative Studio, home">
+        <img src="/assets/brand/monogram.png" alt="" class="brand-monogram" width="40" height="40">
+        <span class="brand-text">Aayat</span>
+      </a>
+      <nav class="site-nav" aria-label="Main Navigation">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/work/" class="nav-link" aria-current="page">Work</a>
+        <a href="/about/" class="nav-link">About & Services</a>
+        <a href="/contact/" class="nav-link">Contact</a>
+        <a href="/contact/" class="btn btn-primary">Start a Project</a>
+      </nav>
+      <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-expanded="false" aria-label="Open navigation menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <article class="section">
+      <div class="container">
+        <!-- Back Navigation -->
+        <div style="margin-bottom: var(--cs-space-6);">
+          <a href="/work/" class="btn-text">&larr; Back to all projects</a>
+        </div>
+
+        <div id="item-details-container" aria-live="polite">
+          <p class="text-muted">Loading project details...</p>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-bottom">
+      <p>&copy; 2026 Aayat Creative Studio. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="/js/pages/work-item.js"></script>
+</body>
+</html>
