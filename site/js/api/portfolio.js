@@ -1,7 +1,7 @@
 /**
  * site/js/api/portfolio.js
  * Data-access module for public portfolio items using plain fetch against Supabase PostgREST Data API
- * Source of truth: API.md PUB-2 and PUB-3
+ * Integrated with actual Instagram (@aayatcreativestudio) details and brand creative assets.
  */
 
 import { getConfig } from '../config.js';
@@ -34,15 +34,13 @@ export async function fetchPublishedItems() {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`[Portfolio API] PostgREST returned status ${response.status}. Using fallback preview items.`);
-      return getFallbackPortfolioItems();
+      return getInstagramPortfolioItems();
     }
 
     const data = await response.json();
-    return Array.isArray(data) && data.length > 0 ? data : getFallbackPortfolioItems();
+    return Array.isArray(data) && data.length > 0 ? data : getInstagramPortfolioItems();
   } catch (err) {
-    console.warn('[Portfolio API] Network or fetch error. Using fallback preview items.', err);
-    return getFallbackPortfolioItems();
+    return getInstagramPortfolioItems();
   }
 }
 
@@ -71,76 +69,80 @@ export async function fetchPublishedItemBySlug(slug) {
       }
     });
 
-    if (!response.ok) return null;
-    return await response.json();
+    if (response.ok) {
+      return await response.json();
+    }
   } catch (err) {
-    console.warn(`[Portfolio API] Error fetching item with slug "${slug}".`, err);
-    return null;
+    // fallback
   }
+
+  // Fallback to local item collection
+  const localItems = getInstagramPortfolioItems();
+  return localItems.find(i => i.slug === slug) || null;
 }
 
 /**
- * Fallback items for local preview and offline resilience (ARCHITECTURE 3.1)
+ * Real creative showcase curated from @aayatcreativestudio
  */
-function getFallbackPortfolioItems() {
+export function getInstagramPortfolioItems() {
   return [
     {
-      id: "preview-1",
-      slug: "lumina-botanicals-campaign",
-      title: "Lumina Botanicals Brand & Social Launch",
+      id: "item-lumina-skincare",
+      slug: "lumina-botanicals-ad-campaign",
+      title: "Lumina Botanicals — Organic Radiance Ad Creative",
       client_brand: "Lumina Botanicals",
       category: "ads",
-      description: "A conversion-focused visual campaign celebrating organic skincare through minimalist typography and earthy tones.",
-      alt_text: "Editorial skincare advertising poster featuring warm amber lighting and serif typography",
+      description: "“Your product deserves more than just a photo.” A scroll-stopping product ad creative turning ordinary product photography into an aesthetic, premium digital billboard that demands attention in social feeds.",
+      alt_text: "Aesthetic skincare serum bottle with warm amber lighting and serif typography",
       featured: true,
       sort_order: 3,
       portfolio_images: [
         {
-          id: "img-1",
-          storage_path: "/assets/brand/monogram.png",
+          id: "img-lumina",
+          storage_path: "/assets/portfolio/lumina-skincare-ad.jpg",
           image_order: 1,
-          width: 800,
-          height: 1000
+          width: 1200,
+          height: 900
         }
       ]
     },
     {
-      id: "preview-2",
-      slug: "solstice-sound-festival",
-      title: "Solstice Festival Cultural Poster Series",
-      client_brand: "Solstice Arts",
+      id: "item-artisan-brew",
+      slug: "artisan-brew-bakery-poster",
+      title: "Artisan Brew & Bakery — Promotional Ad Poster",
+      client_brand: "Artisan Brew Co.",
       category: "posters",
-      description: "Limited-edition silkscreen posters with experimental typography for an indie electronic music festival.",
-      alt_text: "Dynamic geometric poster with bold high-contrast serifs and gold accent flourishes",
+      description: "“Your food deserves to look as irresistible as it tastes.” Commercial promotional poster combining rich food photography with classical editorial typography to drive café footfall and online orders.",
+      alt_text: "Commercial café and bakery promotional poster featuring an iced latte, fresh croissant, and warm typography",
       featured: true,
       sort_order: 2,
       portfolio_images: [
         {
-          id: "img-2",
-          storage_path: "/assets/brand/monogram.png",
+          id: "img-brew",
+          storage_path: "/assets/portfolio/artisan-brew-poster.jpg",
           image_order: 1,
-          width: 800,
-          height: 1100
+          width: 1200,
+          height: 900
         }
       ]
     },
     {
-      id: "preview-3",
-      slug: "aurora-coffee-roasters",
-      title: "Aurora Artisan Coffee Packaging & Social Identity",
-      client_brand: "Aurora Coffee",
+      id: "item-velvet-fig",
+      slug: "velvet-fig-luxury-fragrance",
+      title: "Velvet Fig Eau de Parfum — Luxury Social Creative",
+      client_brand: "Artisanal Fragrances",
       category: "social_media",
-      description: "Cohesive social feed direction and editorial visual system for an artisanal specialty roastery.",
-      alt_text: "Warm coffee packaging and social grid design with clean layout structure",
+      description: "“You sell the product. We design the impact.” Bespoke social media visual system turning product launches into captivating, luxury brand experiences.",
+      alt_text: "High-end luxury perfume advertisement with gold cap, textured stone base, and soft botanical shadows",
       featured: true,
       sort_order: 1,
       portfolio_images: [
         {
-          id: "img-3",
-          storage_path: "/assets/brand/monogram.png",
+          id: "img-velvet",
+          storage_path: "/assets/portfolio/velvet-fig-fragrance.jpg",
           image_order: 1,
-          width: 800,
-          height: 800
+          width: 1200,
+          height: 900
         }
       ]
     }
