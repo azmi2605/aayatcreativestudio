@@ -158,12 +158,30 @@ function createWorkCard(item) {
   content.style.flexDirection = 'column';
   content.style.flex = '1';
 
+  const catRow = document.createElement('div');
+  catRow.style.display = 'flex';
+  catRow.style.justifyContent = 'space-between';
+  catRow.style.alignItems = 'center';
+  catRow.style.marginBottom = 'var(--cs-space-2)';
+
   const category = document.createElement('span');
   category.className = 'text-eyebrow';
   category.style.fontSize = '0.75rem';
-  category.style.marginBottom = 'var(--cs-space-2)';
   category.textContent = formatCategory(item.category);
-  content.appendChild(category);
+  catRow.appendChild(category);
+
+  if (item.offerTag) {
+    const offerBadge = document.createElement('span');
+    offerBadge.textContent = item.offerTag;
+    offerBadge.style.fontSize = '0.7rem';
+    offerBadge.style.fontWeight = '600';
+    offerBadge.style.backgroundColor = '#FEE2E2';
+    offerBadge.style.color = '#991B1B';
+    offerBadge.style.padding = '2px 8px';
+    offerBadge.style.borderRadius = 'var(--cs-radius-sm)';
+    catRow.appendChild(offerBadge);
+  }
+  content.appendChild(catRow);
 
   const title = document.createElement('h3');
   title.style.marginBottom = 'var(--cs-space-2)';
