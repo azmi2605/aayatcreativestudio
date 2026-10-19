@@ -294,8 +294,7 @@ function _mapToLocalFormat(items) {
 function generateSlug(text) {
   return (text || 'project')
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .substring(0, 60);
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 50) || 'project';
 }

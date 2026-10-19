@@ -9,6 +9,7 @@ import { getConfig } from '../config.js';
 let submissionId = generateUUID();
 
 document.addEventListener('DOMContentLoaded', () => {
+  initMobileMenu();
   initCharCounter();
   initFormSubmission();
 });
@@ -153,5 +154,30 @@ function generateUUID() {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
+  });
+}
+
+function initMobileMenu() {
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const nav = document.querySelector('.site-nav');
+  if (!menuBtn || !nav) return;
+
+  menuBtn.addEventListener('click', () => {
+    const isExpanded = menuBtn.getAttribute('aria-expanded') === 'true';
+    menuBtn.setAttribute('aria-expanded', String(!isExpanded));
+    if (!isExpanded) {
+      nav.style.display = 'flex';
+      nav.style.flexDirection = 'column';
+      nav.style.position = 'absolute';
+      nav.style.top = '100%';
+      nav.style.left = '0';
+      nav.style.right = '0';
+      nav.style.backgroundColor = 'var(--cs-color-surface)';
+      nav.style.padding = 'var(--cs-space-5)';
+      nav.style.borderBottom = 'var(--cs-border-default)';
+      nav.style.gap = 'var(--cs-space-4)';
+    } else {
+      nav.style.display = '';
+    }
   });
 }

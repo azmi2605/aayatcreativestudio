@@ -1,6 +1,15 @@
 {
+  "name": "aayatcreativestudio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aayat Creative Studio official website, client showcase, and admin portal",
+  "scripts": {
+    "dev": "npx serve site -l 3000",
+    "serve": "npx serve site -l 3000",
+    "start": "npx serve site -l 3000",
+    "check": "node -c site/js/config.js site/js/api/portfolio.js site/js/admin/dashboard.js site/js/admin/login.js site/js/admin/supabase-client.js site/js/pages/home.js site/js/pages/work.js site/js/pages/work-item.js site/js/pages/contact.js"
+  },
   "dependencies": {
-    "@supabase/server": "^1.9.2",
     "@supabase/supabase-js": "^2.118.0"
   }
 }

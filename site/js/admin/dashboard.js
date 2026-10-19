@@ -378,8 +378,9 @@ function initProductForm() {
     try {
       showStatus('Uploading to Supabase…', 'info');
 
-      // Generate slug from title
-      const slug = generateSlug(title) + '-' + Date.now().toString(36);
+      // Generate valid slug strictly matching database constraint ^[a-z0-9]+(-[a-z0-9]+)*$
+      const baseSlug = generateSlug(title);
+      const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
       // Try Supabase insert
       let savedItem = null;
@@ -540,10 +541,9 @@ function formatCat(c) {
 function generateSlug(text) {
   return (text || 'project')
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .substring(0, 60);
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 45) || 'project';
 }
 
 function showStatus(msg, type = 'info') {
