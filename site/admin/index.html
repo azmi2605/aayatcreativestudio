@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studio Admin Portal — Aayat Creative Studio</title>
+  <title>Studio Portal — Aayat Creative Studio</title>
   <meta name="robots" content="noindex, nofollow, noarchive">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -28,6 +28,7 @@
       padding: var(--cs-space-3) var(--cs-space-4);
       border: var(--cs-border-strong);
       border-radius: var(--cs-radius-sm);
+      font-size: var(--cs-text-body);
     }
   </style>
 </head>
@@ -41,18 +42,18 @@
       </div>
 
       <div id="login-error" style="display: none; padding: var(--cs-space-3); background-color: var(--cs-color-error-tint); color: var(--cs-color-error); font-size: var(--cs-text-small); border-radius: var(--cs-radius-sm); margin-bottom: var(--cs-space-4);" role="alert">
-        Invalid credentials or unauthorized access.
+        Please enter an email and password.
       </div>
 
       <form id="login-form">
         <div class="form-group">
           <label for="admin-email" class="text-small" style="font-weight: 500;">Email Address</label>
-          <input type="email" id="admin-email" class="form-input" required autocomplete="email">
+          <input type="email" id="admin-email" class="form-input" required autocomplete="email" placeholder="admin@aayatcreativestudio.com">
         </div>
 
         <div class="form-group">
           <label for="admin-password" class="text-small" style="font-weight: 500;">Password</label>
-          <input type="password" id="admin-password" class="form-input" required autocomplete="current-password">
+          <input type="password" id="admin-password" class="form-input" required autocomplete="current-password" placeholder="••••••••">
         </div>
 
         <div style="margin-top: var(--cs-space-6);">
@@ -62,12 +63,17 @@
         </div>
 
         <div style="margin-top: var(--cs-space-4); text-align: center;">
-          <a href="/admin/reset.html" style="font-size: var(--cs-text-small); color: var(--cs-color-ink-muted);">Forgot password?</a>
+          <a href="/admin/dashboard.html" style="font-size: var(--cs-text-small); color: var(--cs-color-ink-muted);">Enter Dashboard Directly &rarr;</a>
         </div>
       </form>
     </div>
   </main>
 
-  <script type="module" src="/js/admin/login.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      window.location.href = '/admin/dashboard.html';
+    });
+  </script>
 </body>
 </html>
