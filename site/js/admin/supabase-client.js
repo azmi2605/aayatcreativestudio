@@ -1,0 +1,172 @@
+/**
+ * site/js/admin/supabase-client.js
+ * Lightweight Supabase client for Admin CRUD operations.
+ * Lazy-loads the Supabase JS SDK — no bundler needed.
+ */
+
+import { getConfig } from '../config.js';
+
+const SUPABASE_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+const STORAGE_BUCKET = 'portfolio';
+
+let _supabase = null;
+
+/** Lazily initialize and cache the Supabase client. */
+export async function getSupabaseClient() {
+  if (_supabase) return _supabase;
+  const config = getConfig();
+
+  if (!window.supabase) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = SUPABASE_CDN;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Failed to load Supabase SDK'));
+      document.head.appendChild(script);
+    });
+  }
+
+  _supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+  return _supabase;
+}
+
+/** Sign in admin via Supabase Auth. Returns { session, error }. */
+export async function adminSignIn(email, password) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  return { session: data?.session || null, error };
+}
+
+/** Sign out current admin session. */
+export async function adminSignOut() {
+  const client = await getSupabaseClient();
+  await client.auth.signOut();
+}
+
+/** Get current auth session (null if not signed in). */
+export async function getAdminSession() {
+  const client = await getSupabaseClient();
+  const { data } = await client.auth.getSession();
+  return data?.session || null;
+}
+
+// ─── PORTFOLIO ITEMS ────────────────────────────────────────────────────────
+
+/** Fetch ALL portfolio items (all publish states) for admin table. */
+export async function adminFetchAllItems() {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('portfolio_items')
+    .select('id, slug, title, client_brand, category, description, alt_text, featured, published, sort_order, created_at, portfolio_images ( id, storage_path, image_order, width, height )')
+    .order('sort_order', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Insert a new portfolio item. Returns inserted row. */
+export async function adminInsertItem(itemData) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('portfolio_items')
+    .insert([itemData])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Update a portfolio item by ID. */
+export async function adminUpdateItem(id, updates) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('portfolio_items')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Delete a portfolio item by ID (cascades to portfolio_images). */
+export async function adminDeleteItem(id) {
+  const client = await getSupabaseClient();
+  const { error } = await client.from('portfolio_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** Insert a portfolio_images row. */
+export async function adminInsertImage(imageData) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('portfolio_images')
+    .insert([imageData])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ─── STORAGE ────────────────────────────────────────────────────────────────
+
+/** Upload an image File to Supabase Storage. Returns { path, publicUrl }. */
+export async function uploadPortfolioImage(file, itemSlug) {
+  const client = await getSupabaseClient();
+  const config = getConfig();
+  const ext = file.name.split('.').pop().toLowerCase();
+  const fileName = `${itemSlug}/${Date.now()}.${ext}`;
+
+  const { data, error } = await client.storage
+    .from(STORAGE_BUCKET)
+    .upload(fileName, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+
+  if (error) throw error;
+
+  const publicUrl = `${config.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${data.path}`;
+  return { path: data.path, publicUrl };
+}
+
+/** Remove a file from Storage by its path. */
+export async function deleteStorageImage(storagePath) {
+  const client = await getSupabaseClient();
+  const { error } = await client.storage.from(STORAGE_BUCKET).remove([storagePath]);
+  if (error) console.warn('Storage delete failed:', error.message);
+}
+
+// ─── OFFERS (persisted in site_settings.offers_json + localStorage mirror) ──
+
+/** Fetch offers array from Supabase, with localStorage fallback. */
+export async function adminFetchOffers() {
+  try {
+    const client = await getSupabaseClient();
+    const { data, error } = await client.from('site_settings').select('offers_json').single();
+    if (!error && data && data.offers_json) {
+      const offers = Array.isArray(data.offers_json) ? data.offers_json : JSON.parse(data.offers_json);
+      // Sync to localStorage so client pages pick it up instantly
+      localStorage.setItem('aayat_offers', JSON.stringify(offers));
+      return offers;
+    }
+  } catch (e) {
+    // fall through to localStorage
+  }
+  const stored = localStorage.getItem('aayat_offers');
+  return stored ? JSON.parse(stored) : [];
+}
+
+/** Persist offers array to Supabase AND localStorage. */
+export async function adminSaveOffers(offers) {
+  // Always write to localStorage first (instant client-side sync)
+  localStorage.setItem('aayat_offers', JSON.stringify(offers));
+
+  try {
+    const client = await getSupabaseClient();
+    await client
+      .from('site_settings')
+      .update({ offers_json: offers, updated_at: new Date().toISOString() })
+      .eq('is_singleton', true);
+  } catch (e) {
+    console.warn('Offers not synced to Supabase yet (column may be missing):', e.message);
+  }
+}

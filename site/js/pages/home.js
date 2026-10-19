@@ -4,21 +4,29 @@
  * Follows AGENTS.md rules: no innerHTML with untrusted data, semantic DOM creation.
  */
 
-import { fetchPublishedItems, getLiveOffers } from '../api/portfolio.js';
+import { fetchPublishedItems, getLiveOffers, fetchActiveOffers } from '../api/portfolio.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initMobileMenu();
-  loadOffersBanner();
+  loadOffersBanner();     // Instant sync render from localStorage
   loadFeaturedWork();
+  // Then upgrade offer banner async from Supabase
+  fetchActiveOffers().then(offers => {
+    updateOffersBanner(offers);
+  }).catch(() => {});
 });
 
 function loadOffersBanner() {
+  const offers = getLiveOffers();
+  updateOffersBanner(offers);
+}
+
+function updateOffersBanner(offers) {
   const banner = document.getElementById('top-offer-banner');
   const textEl = document.getElementById('offer-banner-text');
   if (!banner || !textEl) return;
 
-  const offers = getLiveOffers();
-  if (offers.length > 0) {
+  if (offers && offers.length > 0) {
     const topOffer = offers[0];
     textEl.textContent = `✨ ${topOffer.title}: ${topOffer.discount} ${topOffer.code ? `(Use code: ${topOffer.code})` : ''}`;
     banner.style.display = 'block';
