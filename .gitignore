@@ -40,3 +40,6 @@ dist/
 tmp/
 scratch/
 
+# Documentation and root raw assets
+docs/
+assets/
