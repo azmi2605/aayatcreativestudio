@@ -39,3 +39,6 @@ test-results/
 dist/
 tmp/
 scratch/
+
+.assets/
+docs/
