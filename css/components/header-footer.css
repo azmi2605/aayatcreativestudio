@@ -190,3 +190,8 @@
     align-items: center;
   }
 }
+
+/* Eliminate vertical spacing between header and first body section */
+#main-content > .section:first-child:not(.hero-section) {
+  padding-top: 0;
+}
