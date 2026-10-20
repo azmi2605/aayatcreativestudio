@@ -7,7 +7,6 @@
 import { fetchPublishedItems, getLiveOffers, fetchActiveOffers, fetchCategories, getCategoryLabel } from '../api/portfolio.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initMobileMenu();
   loadOffersBanner();     // Instant sync render from localStorage
   loadFeaturedWork();
   // Then upgrade offer banner async from Supabase
@@ -33,46 +32,6 @@ function updateOffersBanner(offers) {
   } else {
     banner.style.display = 'none';
   }
-}
-
-/**
- * Mobile Navigation Menu Handler
- */
-function initMobileMenu() {
-  const menuBtn = document.getElementById('mobile-menu-btn');
-  const nav = document.querySelector('.site-nav');
-
-  if (!menuBtn || !nav) return;
-
-  menuBtn.addEventListener('click', () => {
-    const isExpanded = menuBtn.getAttribute('aria-expanded') === 'true';
-    menuBtn.setAttribute('aria-expanded', String(!isExpanded));
-    
-    // Toggle active display on mobile
-    if (!isExpanded) {
-      nav.style.display = 'flex';
-      nav.style.flexDirection = 'column';
-      nav.style.position = 'absolute';
-      nav.style.top = '100%';
-      nav.style.left = '0';
-      nav.style.right = '0';
-      nav.style.backgroundColor = 'var(--cs-color-surface)';
-      nav.style.padding = 'var(--cs-space-5)';
-      nav.style.borderBottom = 'var(--cs-border-default)';
-      nav.style.gap = 'var(--cs-space-4)';
-    } else {
-      nav.style.display = '';
-      nav.style.flexDirection = '';
-      nav.style.position = '';
-      nav.style.top = '';
-      nav.style.left = '';
-      nav.style.right = '';
-      nav.style.backgroundColor = '';
-      nav.style.padding = '';
-      nav.style.borderBottom = '';
-      nav.style.gap = '';
-    }
-  });
 }
 
 /**

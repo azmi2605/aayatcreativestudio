@@ -59,28 +59,8 @@
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <header class="site-header" role="banner">
-    <div class="container site-header-inner">
-      <a href="/" class="brand-link" aria-label="Aayat Creative Studio, home">
-        <img src="/assets/brand/monogram.png" alt="" class="brand-monogram" width="40" height="40">
-        <span class="brand-text">Aayat</span>
-      </a>
-      <nav class="site-nav" aria-label="Main Navigation">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/work/" class="nav-link" aria-current="page">Work</a>
-        <a href="/about/" class="nav-link">About & Services</a>
-        <a href="/contact/" class="nav-link">Contact</a>
-        <a href="/contact/" class="btn btn-primary">Start a Project</a>
-      </nav>
-      <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-expanded="false" aria-label="Open navigation menu">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-  </header>
+  <!-- Public Header (included from /includes/header.html) -->
+  <div id="site-header"></div>
 
   <main id="main-content">
     <section class="section">
@@ -110,27 +90,10 @@
     </section>
   </main>
 
-  <footer class="site-footer" role="contentinfo">
-    <div class="container site-footer-inner">
-      <div class="footer-brand">
-        <a href="/" class="brand-link" aria-label="Aayat Creative Studio, home">
-          <img src="/assets/brand/monogram.png" alt="" class="brand-monogram" width="36" height="36">
-          <span class="brand-text">Aayat</span>
-        </a>
-        <p class="footer-tagline">Bespoke design, thoughtful typography, and creative strategy for forward-thinking brands.</p>
-      </div>
-      <nav class="footer-nav" aria-label="Footer Navigation">
-        <a href="/work/">Portfolio</a>
-        <a href="/about/">About & Services</a>
-        <a href="/contact/">Start a Project</a>
-        <a href="https://instagram.com/aayatcreativestudio" target="_blank" rel="noopener noreferrer">Instagram &#8599;</a>
-      </nav>
-    </div>
-    <div class="container footer-bottom">
-      <p>&copy; 2026 Aayat Creative Studio. All rights reserved.</p>
-    </div>
-  </footer>
+  <!-- Public Footer (included from /includes/footer.html) -->
+  <div id="site-footer"></div>
 
+  <script type="module" src="/js/includes.js"></script>
   <script type="module" src="/js/pages/work.js"></script>
 </body>
 </html>
