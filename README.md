@@ -93,8 +93,6 @@ python -m http.server --directory site 3000
 
 Open your browser to:
 - **Client Website:** [http://localhost:3000](http://localhost:3000)
-- **Admin Portal:** [http://localhost:3000/admin/](http://localhost:3000/admin/)
-- **Contact Brief:** [http://localhost:3000/contact/](http://localhost:3000/contact/)
 
 ### 2. Verify Code Syntax & Type Checking
 Run the built-in syntax check across all JavaScript modules:
