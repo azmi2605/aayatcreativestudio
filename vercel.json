@@ -8,7 +8,7 @@
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/includes/(.*)", "dest": "/includes/$1" },
     { "src": "/js/(.*)", "dest": "/site/js/$1" },
-    { "src": "/about/?", "dest": "/site/about/index.html" },
+    { "src": "/about/?", "dest": "/about/index.html" },
     { "src": "/work/?", "dest": "/work/index.html" },
     { "src": "/contact/?", "dest": "/site/contact/index.html" },
     { "src": "/work/item(.*)", "dest": "/work/item.html" },
