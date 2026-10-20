@@ -107,15 +107,14 @@
 
     grid.innerHTML = '';
     SERVICES.forEach((service) => {
-      const card = document.createElement('div');
+      const card = document.createElement('article');
       card.style.cssText =
         'padding:var(--cs-space-5);' +
         'border:var(--cs-border-default);' +
         'border-radius:var(--cs-radius-sm);' +
         'background:var(--cs-color-bg);' +
         'display:flex;' +
-        'flex-direction:column;' +
-        'height:100%;';
+        'flex-direction:column;';
 
       const title = document.createElement('h3');
       title.style.cssText =
@@ -124,7 +123,7 @@
         'line-height:var(--cs-leading-h3);' +
         'color:var(--cs-color-brown);' +
         'font-weight:var(--cs-weight-semibold);' +
-        'margin:0 0 var(--cs-space-2) 0;';
+        'margin:0 0 var(--cs-space-3) 0;';
       title.textContent = `${service.num}. ${service.title}`;
       card.appendChild(title);
 
@@ -137,23 +136,43 @@
       desc.textContent = service.description;
       card.appendChild(desc);
 
+      const divider = document.createElement('div');
+      divider.style.cssText =
+        'height:1px;' +
+        'background:var(--cs-color-gold);' +
+        'margin:0 0 var(--cs-space-3) 0;';
+      card.appendChild(divider);
+
       const list = document.createElement('ul');
       list.style.cssText =
-        'list-style:none;' +
         'margin:0;' +
         'padding:0;' +
-        'font-size:var(--cs-text-small);' +
-        'color:var(--cs-color-ink-muted);' +
+        'list-style:none;' +
         'display:flex;' +
         'flex-direction:column;' +
         'gap:var(--cs-space-2);';
       service.items.forEach((item) => {
         const li = document.createElement('li');
         li.style.cssText =
+          'display:flex;' +
+          'align-items:center;' +
+          'gap:var(--cs-space-2);' +
           'margin:0;' +
-          'font:inherit;' +
+          'font-size:var(--cs-text-small);' +
+          'line-height:var(--cs-leading-small);' +
           'color:var(--cs-color-brown);';
-        li.innerHTML = `&#10003; ${item}`;
+        const marker = document.createElement('span');
+        marker.style.cssText =
+          'display:inline-block;' +
+          'width:var(--cs-space-2);' +
+          'height:var(--cs-space-2);' +
+          'background:var(--cs-color-gold-deep);' +
+          'border-radius:50%;' +
+          'flex-shrink:0;';
+        li.appendChild(marker);
+        const text = document.createElement('span');
+        text.textContent = item;
+        li.appendChild(text);
         list.appendChild(li);
       });
       card.appendChild(list);
