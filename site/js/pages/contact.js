@@ -11,8 +11,29 @@ let submissionId = generateUUID();
 document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initCharCounter();
+  initCategoryPills();
   initFormSubmission();
 });
+
+function initCategoryPills() {
+  const pills = document.querySelectorAll('.category-pill');
+  pills.forEach((pill) => {
+    const checkbox = pill.querySelector('input[type="checkbox"]');
+    if (!checkbox) return;
+
+    const updateState = () => {
+      pill.classList.toggle('active', checkbox.checked);
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="services"]:checked'));
+      const select = document.getElementById('service');
+      if (select && checkedBoxes.length > 0) {
+        select.value = checkedBoxes[0].value;
+      }
+    };
+
+    checkbox.addEventListener('change', updateState);
+    updateState();
+  });
+}
 
 function initCharCounter() {
   const textarea = document.getElementById('projectDetails');
@@ -42,8 +63,15 @@ function initFormSubmission() {
       // Spam hit: pretend success
       showBanner(banner, 'success', 'Thank you! Your creative brief has been received. We will contact you soon.');
       form.reset();
+      document.querySelectorAll('.category-pill').forEach((p) => p.classList.remove('active'));
       return;
     }
+
+    const checkedServices = Array.from(
+      document.querySelectorAll('input[name="services"]:checked')
+    ).map((cb) => cb.value);
+    const fallbackService = document.getElementById('service')?.value || '';
+    const selectedService = checkedServices[0] || fallbackService;
 
     const payload = {
       submissionId: submissionId,
@@ -51,7 +79,8 @@ function initFormSubmission() {
       brandName: document.getElementById('brandName').value.trim(),
       email: document.getElementById('email').value.trim().toLowerCase(),
       phone: document.getElementById('phone').value.trim() || null,
-      service: document.getElementById('service').value,
+      service: selectedService,
+      services: checkedServices.length > 0 ? checkedServices : (selectedService ? [selectedService] : []),
       budgetRange: document.getElementById('budgetRange').value || 'not_sure_yet',
       projectDetails: document.getElementById('projectDetails').value.trim(),
       referenceLink: document.getElementById('referenceLink').value.trim() || null,
@@ -85,6 +114,7 @@ function initFormSubmission() {
       if (response.ok) {
         showBanner(banner, 'success', 'Thank you! Your creative brief has been submitted successfully. We will be in touch shortly.');
         form.reset();
+        document.querySelectorAll('.category-pill').forEach((p) => p.classList.remove('active'));
         // Generate fresh ID for any subsequent submission
         submissionId = generateUUID();
         const counter = document.getElementById('char-counter');
@@ -113,7 +143,7 @@ function validatePayload(p) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!p.email || !emailRegex.test(p.email) || p.email.length > 254) errors.push('email');
 
-  if (!p.service) errors.push('service');
+  if (!p.service && (!p.services || p.services.length === 0)) errors.push('service');
   if (!p.projectDetails || p.projectDetails.length < 20 || p.projectDetails.length > 1000) errors.push('projectDetails');
 
   if (p.referenceLink) {

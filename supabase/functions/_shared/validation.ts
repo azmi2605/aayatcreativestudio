@@ -21,6 +21,38 @@ export const SERVICE_OPTIONS = [
   'other',
 ] as const;
 
+export type ServiceOption = (typeof SERVICE_OPTIONS)[number];
+
+export const CATEGORY_OPTIONS = [
+  'ads',
+  'posters',
+  'social_media',
+  'ad_creatives',
+  'poster_design',
+  'social_media_design',
+  'other',
+] as const;
+
+export const CATEGORY_MAP: Record<string, ServiceOption> = {
+  ads: 'ad_creatives',
+  ad_creatives: 'ad_creatives',
+  posters: 'poster_design',
+  poster_design: 'poster_design',
+  social_media: 'social_media_design',
+  social_media_design: 'social_media_design',
+  other: 'other',
+};
+
+export const SERVICE_LABELS: Record<string, string> = {
+  ad_creatives: 'Ad Creatives',
+  poster_design: 'Poster Design',
+  social_media_design: 'Social Media Design',
+  other: 'Other Creative Work',
+  ads: 'Ad Creatives',
+  posters: 'Poster Design',
+  social_media: 'Social Media Design',
+};
+
 export const BUDGET_RANGE_OPTIONS = [
   'under_10k',
   '10k_to_25k',
@@ -50,7 +82,11 @@ export interface EnquiryInput {
   brandName: string;
   email: string;
   phone?: string | null;
-  service: string;
+  service?: string;
+  services?: string[] | string;
+  categories?: string[] | string;
+  notify?: boolean;
+  disableNotification?: boolean;
   projectDetails: string;
   budgetRange?: string | null;
   referenceLink?: string | null;
@@ -65,6 +101,9 @@ export interface NormalizedEnquiry {
   email: string;
   phone: string | null;
   service: string;
+  services: string[];
+  servicesDisplay: string;
+  notify: boolean;
   projectDetails: string;
   budgetRange: string | null;
   referenceLink: string | null;
@@ -72,7 +111,7 @@ export interface NormalizedEnquiry {
   website: string;
 }
 
-// Normalize input: trim, lowercase email, remove disallowed control characters
+// Normalize input: trim, lowercase email, remove disallowed control characters, parse multiple categories
 export function normalizeInput(raw: Record<string, unknown>): NormalizedEnquiry {
   const trim = (v: unknown): string | null => {
     if (v === null || v === undefined) return null;
@@ -88,13 +127,62 @@ export function normalizeInput(raw: Record<string, unknown>): NormalizedEnquiry 
   // Remove disallowed control characters from text fields
   const stripControlChars = (s: string) => s.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
 
+  // Extract multiple categories or services
+  const extractItems = (v: unknown): string[] => {
+    if (!v) return [];
+    if (Array.isArray(v)) {
+      return v.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof v === 'string') {
+      return v.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const collectedServices = [
+    ...extractItems(raw.services),
+    ...extractItems(raw.categories),
+    ...extractItems(raw.service),
+  ];
+
+  // Map each item to canonical service key and deduplicate
+  const canonicalServices = Array.from(
+    new Set(
+      collectedServices.map((s) => {
+        const lower = s.toLowerCase();
+        return CATEGORY_MAP[lower] ?? lower;
+      })
+    )
+  );
+
+  // Primary service must match database enum creative_service
+  let primaryService = '';
+  if (canonicalServices.length > 0) {
+    const matched = canonicalServices.find((s) =>
+      SERVICE_OPTIONS.includes(s as ServiceOption)
+    );
+    primaryService = matched ?? 'other';
+  } else if (raw.service && typeof raw.service === 'string') {
+    primaryService = String(raw.service).trim();
+  }
+
+  const servicesDisplay = canonicalServices.length > 0
+    ? canonicalServices.map((s) => SERVICE_LABELS[s] ?? s).join(', ')
+    : (SERVICE_LABELS[primaryService] ?? primaryService);
+
+  // Notification toggle: default is true unless explicitly disabled
+  const notifyToggle = raw.notify !== false && raw.disableNotification !== true;
+
   return {
     submissionId: String(raw.submissionId ?? '').trim(),
     name: stripControlChars(rawName),
     brandName: stripControlChars(rawBrandName),
     email: stripControlChars(rawEmail),
     phone: trim(raw.phone),
-    service: String(raw.service ?? '').trim(),
+    service: primaryService,
+    services: canonicalServices,
+    servicesDisplay,
+    notify: notifyToggle,
     projectDetails: stripControlChars(rawProjectDetails),
     budgetRange: trim(raw.budgetRange),
     referenceLink: trim(raw.referenceLink),
@@ -147,10 +235,17 @@ export function validateEnquiry(input: NormalizedEnquiry): ValidationResult {
     if (!PHONE_REGEX.test(input.phone)) fields.phone = { code: 'invalid_format' };
   }
 
-  // service: required, must be one of the enum values
-  if (!input.service) {
+  // service / services: at least one service/category required, and all must be valid options
+  if (!input.service && input.services.length === 0) {
     fields.service = { code: 'required' };
-  } else if (!SERVICE_OPTIONS.includes(input.service as (typeof SERVICE_OPTIONS)[number])) {
+  } else if (input.services.length > 0) {
+    const hasInvalid = input.services.some(
+      (s) => !SERVICE_OPTIONS.includes(s as ServiceOption)
+    );
+    if (hasInvalid) {
+      fields.services = { code: 'invalid_option' };
+    }
+  } else if (input.service && !SERVICE_OPTIONS.includes(input.service as ServiceOption)) {
     fields.service = { code: 'invalid_option' };
   }
 
@@ -210,6 +305,10 @@ export const ALLOWED_FIELDS = [
   'email',
   'phone',
   'service',
+  'services',
+  'categories',
+  'notify',
+  'disableNotification',
   'projectDetails',
   'budgetRange',
   'referenceLink',

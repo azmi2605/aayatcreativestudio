@@ -4,7 +4,7 @@
  * Follows AGENTS.md rules: no innerHTML with untrusted data, semantic DOM creation.
  */
 
-import { fetchPublishedItems, getLiveOffers, fetchActiveOffers } from '../api/portfolio.js';
+import { fetchPublishedItems, getLiveOffers, fetchActiveOffers, fetchCategories, getCategoryLabel } from '../api/portfolio.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initMobileMenu();
@@ -83,7 +83,11 @@ async function loadFeaturedWork() {
   if (!container) return;
 
   try {
-    const items = await fetchPublishedItems();
+    // The shared category list gives the cards the same labels the admin uses.
+    const [items, categories] = await Promise.all([
+      fetchPublishedItems(),
+      fetchCategories()
+    ]);
     const featuredItems = items.filter(item => item.featured).slice(0, 3);
 
     container.textContent = ''; // Clear loading state safely
@@ -166,7 +170,7 @@ function createWorkCard(item) {
   const category = document.createElement('span');
   category.className = 'text-eyebrow';
   category.style.fontSize = '0.75rem';
-  category.textContent = formatCategory(item.category);
+  category.textContent = getCategoryLabel(item.category);
   catRow.appendChild(category);
 
   if (item.offerTag) {
@@ -211,13 +215,4 @@ function createWorkCard(item) {
 
   article.appendChild(content);
   return article;
-}
-
-function formatCategory(cat) {
-  switch (cat) {
-    case 'ads': return 'Ad Creative';
-    case 'posters': return 'Poster Design';
-    case 'social_media': return 'Social Media';
-    default: return 'Creative Work';
-  }
 }

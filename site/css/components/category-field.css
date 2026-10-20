@@ -1,0 +1,17 @@
+/**
+ * site/css/components/category-field.css
+ * Category picker row — a dropdown that fills the row, with a remove-category
+ * button pinned to its right.
+ */
+
+.category-select-row {
+  display: flex;
+  gap: var(--cs-space-2);
+  align-items: stretch;
+}
+
+/* The dropdown takes the remaining width; the button keeps its own size */
+.category-select-row .form-select {
+  flex: 1;
+  min-width: 0;
+}

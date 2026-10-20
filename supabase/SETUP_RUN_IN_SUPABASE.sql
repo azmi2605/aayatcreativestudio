@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_items (
   slug TEXT NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
   title TEXT NOT NULL CHECK (length(trim(title)) BETWEEN 1 AND 120),
   client_brand TEXT CHECK (length(trim(client_brand)) BETWEEN 1 AND 100),
-  category public.portfolio_category NOT NULL,
+  category TEXT NOT NULL,
   description TEXT NOT NULL CHECK (length(trim(description)) BETWEEN 1 AND 500),
   alt_text TEXT CHECK (length(trim(alt_text)) BETWEEN 1 AND 300),
   featured BOOLEAN NOT NULL DEFAULT FALSE,
@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS public.portfolio_items (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.portfolio_items ALTER COLUMN category TYPE TEXT USING category::text;
+
+-- The offer/tag badge shown on a design, on both the portal and the client site.
+ALTER TABLE public.portfolio_items ADD COLUMN IF NOT EXISTS offer_tag TEXT;
 
 -- 6. Portfolio Images
 CREATE TABLE IF NOT EXISTS public.portfolio_images (
@@ -92,6 +97,7 @@ CREATE TABLE IF NOT EXISTS public.enquiries (
   email TEXT NOT NULL CHECK (length(trim(email)) <= 254 AND email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
   phone TEXT CHECK (length(trim(phone)) <= 30),
   service public.creative_service NOT NULL,
+  services TEXT[] DEFAULT '{}',
   project_details TEXT NOT NULL CHECK (length(trim(project_details)) BETWEEN 20 AND 1000),
   budget_range TEXT CHECK (length(trim(budget_range)) <= 60),
   reference_link TEXT CHECK (length(trim(reference_link)) <= 500 AND (reference_link IS NULL OR reference_link ~ '^https?://')),
@@ -101,7 +107,35 @@ CREATE TABLE IF NOT EXISTS public.enquiries (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 9. Private admin_users table
+ALTER TABLE public.enquiries ADD COLUMN IF NOT EXISTS services TEXT[];
+
+-- 9. Categories (shared admin <-> client list)
+CREATE TABLE IF NOT EXISTS public.categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  value TEXT NOT NULL UNIQUE CHECK (value ~ '^[a-z0-9_]+$'),
+  label TEXT NOT NULL CHECK (length(trim(label)) BETWEEN 1 AND 60),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Keeps categories.updated_at accurate when a label changes.
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS categories_updated_at ON public.categories;
+CREATE TRIGGER categories_updated_at
+  BEFORE UPDATE ON public.categories
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- 10. Private admin_users table
 CREATE TABLE IF NOT EXISTS private.admin_users (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -115,7 +149,7 @@ CREATE TABLE IF NOT EXISTS private.rate_limits (
   PRIMARY KEY (caller_hash, bucket_window)
 );
 
--- 10. is_admin() Security Definer Function
+-- 11. is_admin() Security Definer Function
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 SECURITY DEFINER
@@ -130,16 +164,22 @@ BEGIN
 END;
 $$;
 
--- 11. Enable Row Level Security
+-- 12. Enable Row Level Security
 ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.portfolio_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.portfolio_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.enquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 
--- 12. RLS Policies — Public reads
+-- 13. RLS Policies — Public reads
 DO $$ BEGIN
   CREATE POLICY "Public read site_settings" ON public.site_settings
+    FOR SELECT TO anon, authenticated USING (TRUE);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Public read categories" ON public.categories
     FOR SELECT TO anon, authenticated USING (TRUE);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -164,9 +204,14 @@ DO $$ BEGIN
     FOR SELECT TO anon, authenticated USING (published = TRUE);
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- 13. RLS Policies — Admin full access
+-- 14. RLS Policies — Admin full access
 DO $$ BEGIN
   CREATE POLICY "Admin full site_settings" ON public.site_settings
+    FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE POLICY "Admin full categories" ON public.categories
     FOR ALL TO authenticated USING (public.is_admin()) WITH CHECK (public.is_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -200,7 +245,20 @@ DO $$ BEGIN
     FOR DELETE TO authenticated USING (public.is_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- 14. Seed site_settings singleton row
+-- 15. RLS Policies — public writes for enquiries only
+-- The contact form posts to the submit-enquiry edge function, which inserts
+-- with the service role. The policy below covers a direct insert as well.
+DO $$ BEGIN
+  CREATE POLICY "Public insert enquiries" ON public.enquiries
+    FOR INSERT TO anon, authenticated
+    WITH CHECK (TRUE);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- The portal signs in with Supabase Auth and writes through the
+-- "Admin full ..." policies above, which check is_admin(). No anonymous
+-- write policy exists on the content tables.
+
+-- 16. Seed site_settings singleton row
 INSERT INTO public.site_settings (
   is_singleton, tagline, instagram_handle, contact_email, about_text, offers_json
 )
@@ -216,7 +274,17 @@ ON CONFLICT (is_singleton) DO UPDATE SET
   offers_json = EXCLUDED.offers_json,
   updated_at = now();
 
--- 15. Storage bucket for portfolio images
+-- 17. Seed the built-in category list
+INSERT INTO public.categories (value, label, sort_order) VALUES
+  ('ads', 'Ad Creatives', 1),
+  ('posters', 'Poster Design', 2),
+  ('social_media', 'Social Media Design', 3)
+ON CONFLICT (value) DO UPDATE SET
+  label = EXCLUDED.label,
+  sort_order = EXCLUDED.sort_order,
+  updated_at = now();
+
+-- 18. Storage bucket for portfolio images
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'portfolio',
@@ -229,7 +297,7 @@ ON CONFLICT (id) DO UPDATE SET
   public = TRUE,
   file_size_limit = 5242880;
 
--- 16. Storage RLS policies
+-- 19. Storage RLS policies
 DO $$ BEGIN
   CREATE POLICY "Public read portfolio images" ON storage.objects
     FOR SELECT TO anon, authenticated

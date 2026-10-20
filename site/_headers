@@ -9,7 +9,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self'; img-src 'self' data: blob: https://*.supabase.co http://127.0.0.1:54321; font-src 'self'; connect-src 'self' https://*.supabase.co http://127.0.0.1:54321 https://www.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co http://127.0.0.1:54321; font-src 'self'; connect-src 'self' https://*.supabase.co http://127.0.0.1:54321 https://www.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';
 
 # HTML documents: revalidate
 /*.html

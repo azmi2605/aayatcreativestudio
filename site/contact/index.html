@@ -63,6 +63,42 @@
       color: var(--cs-color-error);
       border: 1px solid var(--cs-color-error);
     }
+    /* Category selector pills */
+    .category-options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--cs-space-3);
+      margin-top: var(--cs-space-2);
+    }
+    .category-pill {
+      display: flex;
+      align-items: center;
+      gap: var(--cs-space-2);
+      padding: var(--cs-space-3) var(--cs-space-4);
+      background: var(--cs-color-surface-elevated, #161616);
+      border: 1px solid var(--cs-color-border, #2a2a2a);
+      border-radius: var(--cs-radius-sm, 6px);
+      cursor: pointer;
+      font-size: var(--cs-font-size-sm, 0.875rem);
+      color: var(--cs-color-text-secondary, #cccccc);
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .category-pill:hover {
+      border-color: var(--cs-color-primary, #ffffff);
+      color: var(--cs-color-text-primary, #ffffff);
+    }
+    .category-pill input[type="checkbox"] {
+      accent-color: var(--cs-color-primary, #ffffff);
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    .category-pill.active {
+      border-color: var(--cs-color-primary, #ffffff);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--cs-color-text-primary, #ffffff);
+    }
     /* Honeypot field invisible to humans & assistive technology */
     .hp-field {
       position: absolute !important;
@@ -148,29 +184,46 @@
                 </div>
               </div>
 
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--cs-space-4);">
-                <div class="form-group">
-                  <label for="service" class="form-label">Primary Service Needed *</label>
-                  <select id="service" name="service" class="form-select" required>
-                    <option value="" disabled selected>Select a creative focus...</option>
-                    <option value="ad_creatives">Ad Creatives</option>
-                    <option value="poster_design">Poster Design</option>
-                    <option value="social_media_design">Social Media Design</option>
-                    <option value="other">Other Creative Work</option>
-                  </select>
-                  <span class="form-error-msg" id="service-error">Please select a service category.</span>
+              <div class="form-group">
+                <label class="form-label">Services / Categories Needed * <span class="text-muted" style="font-size: 0.85em; font-weight: normal;">(Select one or multiple)</span></label>
+                <div class="category-options-grid" id="category-options">
+                  <label class="category-pill">
+                    <input type="checkbox" name="services" value="ad_creatives">
+                    <span>Ad Creatives</span>
+                  </label>
+                  <label class="category-pill">
+                    <input type="checkbox" name="services" value="poster_design">
+                    <span>Poster Design</span>
+                  </label>
+                  <label class="category-pill">
+                    <input type="checkbox" name="services" value="social_media_design">
+                    <span>Social Media Design</span>
+                  </label>
+                  <label class="category-pill">
+                    <input type="checkbox" name="services" value="other">
+                    <span>Other Creative Work</span>
+                  </label>
                 </div>
+                <!-- Hidden fallback for backwards compatibility -->
+                <select id="service" name="service" style="display: none;">
+                  <option value="">Select a creative focus...</option>
+                  <option value="ad_creatives">Ad Creatives</option>
+                  <option value="poster_design">Poster Design</option>
+                  <option value="social_media_design">Social Media Design</option>
+                  <option value="other">Other Creative Work</option>
+                </select>
+                <span class="form-error-msg" id="service-error">Please select at least one service category.</span>
+              </div>
 
-                <div class="form-group">
-                  <label for="budgetRange" class="form-label">Estimated Budget</label>
-                  <select id="budgetRange" name="budgetRange" class="form-select">
-                    <option value="not_sure_yet" selected>Not sure yet / Flexible</option>
-                    <option value="under_10k">Under ₹10,000</option>
-                    <option value="10k_to_25k">₹10,000 – ₹25,000</option>
-                    <option value="25k_to_50k">₹25,000 – ₹50,000</option>
-                    <option value="above_50k">₹50,000+</option>
-                  </select>
-                </div>
+              <div class="form-group">
+                <label for="budgetRange" class="form-label">Estimated Budget</label>
+                <select id="budgetRange" name="budgetRange" class="form-select">
+                  <option value="not_sure_yet" selected>Not sure yet / Flexible</option>
+                  <option value="under_10k">Under ₹10,000</option>
+                  <option value="10k_to_25k">₹10,000 – ₹25,000</option>
+                  <option value="25k_to_50k">₹25,000 – ₹50,000</option>
+                  <option value="above_50k">₹50,000+</option>
+                </select>
               </div>
 
               <div class="form-group">

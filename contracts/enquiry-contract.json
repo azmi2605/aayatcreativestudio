@@ -81,13 +81,41 @@
     },
     "service": {
       "type": "string",
-      "required": true,
+      "required": false,
       "enum": [
         "ad_creatives",
         "poster_design",
         "social_media_design",
         "other"
       ]
+    },
+    "services": {
+      "type": "array",
+      "required": false,
+      "description": "Multiple category/service options chosen by the client.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "ad_creatives",
+          "poster_design",
+          "social_media_design",
+          "other"
+        ]
+      }
+    },
+    "categories": {
+      "type": "array",
+      "required": false,
+      "description": "Category aliases (e.g. ads, posters, social_media).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notify": {
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Toggle to enable or disable owner notification email for this enquiry."
     },
     "projectDetails": {
       "type": "string",

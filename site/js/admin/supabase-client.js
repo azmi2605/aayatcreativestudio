@@ -1,12 +1,16 @@
 /**
  * site/js/admin/supabase-client.js
  * Lightweight Supabase client for Admin CRUD operations.
- * Lazy-loads the Supabase JS SDK — no bundler needed.
+ * Uses the vendored Supabase JS SDK (no build step, no runtime CDN).
  */
 
 import { getConfig } from '../config.js';
 
-const SUPABASE_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+// Vendored @supabase/supabase-js v2.118.0 (UMD build, committed to the repo).
+// Loaded from the same origin so the Content-Security-Policy 'self' source
+// allows it — a CDN import was blocked in production and silently broke
+// every admin read and write.
+const SUPABASE_SDK_PATH = '/js/lib/supabase.js';
 const STORAGE_BUCKET = 'portfolio';
 
 let _supabase = null;
@@ -19,7 +23,7 @@ export async function getSupabaseClient() {
   if (!window.supabase) {
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = SUPABASE_CDN;
+      script.src = SUPABASE_SDK_PATH;
       script.onload = resolve;
       script.onerror = () => reject(new Error('Failed to load Supabase SDK'));
       document.head.appendChild(script);
@@ -52,6 +56,19 @@ export async function getAdminSession() {
   return data?.session || null;
 }
 
+/**
+ * Ask the database whether the signed-in user is an administrator.
+ * The is_admin() function checks private.admin_users (DATABASE.md 6.6), so a
+ * valid Auth session on its own does not grant access.
+ * @returns {Promise<boolean>} True when the user is an admin.
+ */
+export async function isAdminUser() {
+  const client = await getSupabaseClient();
+  const { data, error } = await client.rpc('is_admin');
+  if (error) throw error;
+  return data === true;
+}
+
 // ─── PORTFOLIO ITEMS ────────────────────────────────────────────────────────
 
 /** Fetch ALL portfolio items (all publish states) for admin table. */
@@ -59,7 +76,7 @@ export async function adminFetchAllItems() {
   const client = await getSupabaseClient();
   const { data, error } = await client
     .from('portfolio_items')
-    .select('id, slug, title, client_brand, category, description, alt_text, featured, published, sort_order, created_at, portfolio_images ( id, storage_path, image_order, width, height )')
+    .select('id, slug, title, client_brand, category, description, alt_text, offer_tag, featured, published, sort_order, created_at, portfolio_images ( id, storage_path, image_order, width, height )')
     .order('sort_order', { ascending: false });
   if (error) throw error;
   return data || [];
@@ -107,6 +124,38 @@ export async function adminInsertImage(imageData) {
     .single();
   if (error) throw error;
   return data;
+}
+
+// ─── CATEGORIES (shared list for the admin portal and the client site) ─────
+
+/** Fetch the shared category list, ordered for display. */
+export async function adminFetchCategories() {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('categories')
+    .select('id, value, label, sort_order')
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Insert a category into the shared list. */
+export async function adminInsertCategory(category) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('categories')
+    .insert([category])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Delete a category from the shared list by its value. */
+export async function adminDeleteCategory(value) {
+  const client = await getSupabaseClient();
+  const { error } = await client.from('categories').delete().eq('value', value);
+  if (error) throw error;
 }
 
 // ─── STORAGE ────────────────────────────────────────────────────────────────

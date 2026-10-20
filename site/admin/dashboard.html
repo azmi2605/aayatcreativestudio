@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components/buttons.css">
+  <link rel="stylesheet" href="/css/components/category-field.css">
   <link rel="stylesheet" href="/css/components/header-footer.css">
   <style>
     .admin-nav-bar {
@@ -99,6 +100,18 @@
       border-radius: var(--cs-radius-sm);
       font-size: var(--cs-text-small);
       width: 100%;
+    }
+    .modal-card-compact {
+      max-width: 420px;
+    }
+    .confirm-modal-message {
+      margin-top: var(--cs-space-2);
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: var(--cs-space-3);
+      justify-content: flex-end;
+      margin-top: var(--cs-space-5);
     }
     .image-preview-box {
       width: 100%;
@@ -232,12 +245,35 @@
             <input type="text" id="prod-brand" class="form-input" required placeholder="e.g. Aura Naturals">
           </div>
           <div class="form-group">
-            <label class="text-small" style="font-weight: 500;">Category *</label>
-            <select id="prod-category" class="form-select">
-              <option value="ads">Ad Creatives</option>
-              <option value="posters">Poster Design</option>
-              <option value="social_media">Social Media Design</option>
-            </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label class="text-small" style="font-weight: 500; margin-bottom: 0;">Category *</label>
+              <button type="button" id="btn-show-add-cat" class="btn-text" style="font-size: 0.75rem; color: var(--cs-color-brown, #b45309); cursor: pointer; background: none; border: none; padding: 0; font-weight: 600;">+ Add Category</button>
+            </div>
+            <!-- Select + remove-category button side by side -->
+            <div class="category-select-row">
+              <select id="prod-category" class="form-select"></select>
+              <button type="button" id="btn-remove-cat" class="btn-icon"
+                title="Remove category" aria-label="Remove category" disabled>
+                <svg class="btn-icon-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                  aria-hidden="true" focusable="false">
+                  <path d="M4 7h16M10 11v6M14 11v6M5 7l1 12.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5L19 7M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                </svg>
+              </button>
+            </div>
+            <!-- Inline Add New Category Box -->
+            <div id="new-category-box" style="display: none; margin-top: 6px; padding: 8px; background: rgba(0,0,0,0.03); border: 1px dashed var(--cs-color-border, #ccc); border-radius: var(--cs-radius-sm, 4px);">
+              <div style="display: flex; gap: 6px;">
+                <input type="text" id="new-cat-input" class="form-input" placeholder="e.g. Brand Identity, Packaging" style="font-size: 0.85rem; padding: 6px 10px;">
+                <button type="button" id="btn-save-new-cat" class="btn btn-primary btn-compact" style="font-size: 0.8rem; padding: 6px 12px; white-space: nowrap;">Add</button>
+                <button type="button" id="btn-cancel-new-cat" class="btn btn-secondary btn-compact" style="font-size: 0.8rem; padding: 6px 8px;" title="Cancel">✕</button>
+              </div>
+              <span id="new-cat-error" style="display: none; color: var(--cs-color-error, #dc2626); font-size: 0.75rem; margin-top: 4px;">Please enter a category name.</span>
+            </div>
+            <!-- The shared category list, with a remove control per entry.
+                 Rendering is done by dashboard.js from the categories table. -->
+            <div id="custom-cat-manager" style="display: none; margin-top: 10px;"></div>
+
           </div>
         </div>
 
@@ -304,6 +340,18 @@
           <button type="submit" class="btn btn-primary">Publish Offer</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM -->
+  <div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+    <div class="modal-card modal-card-compact">
+      <h3 id="confirm-modal-title">Remove category?</h3>
+      <p id="confirm-modal-message" class="text-small text-muted confirm-modal-message"></p>
+      <div class="confirm-modal-actions">
+        <button type="button" id="confirm-modal-cancel" class="btn btn-secondary btn-compact">Cancel</button>
+        <button type="button" id="confirm-modal-ok" class="btn btn-danger btn-compact">Remove</button>
+      </div>
     </div>
   </div>
 

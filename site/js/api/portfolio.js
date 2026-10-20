@@ -1,72 +1,35 @@
 /**
  * site/js/api/portfolio.js
- * Public data-access module — reads portfolio items and offers for the client site.
+ * Public data-access module — reads portfolio items, categories and offers
+ * for the client site.
  *
  * Data priority chain (highest → lowest):
- *   1. Supabase REST API (live, authoritative data from admin changes)
- *   2. localStorage mirror (written by admin dashboard on every save — instant cross-tab sync)
- *   3. Hard-coded seed items (first-load fallback when Supabase is unreachable)
+ *   1. Supabase REST API — the single source of truth. The admin portal writes
+ *      here, and the client site reads from here.
+ *   2. localStorage mirror — a copy of what Supabase last returned in this
+ *      browser. It is only used when Supabase cannot be reached (offline).
+ *
+ * A successful Supabase response is always authoritative, even when it is
+ * empty: the client site shows what the admin published, nothing else. There
+ * is no seed data, so an empty database renders an empty state rather than
+ * invented projects.
  */
 
 import { getConfig } from '../config.js';
 
-// ─── Seed portfolio items (matches @aayatcreativestudio Instagram content) ───
-export const SEED_PORTFOLIO_ITEMS = [
-  {
-    id: 'item-lumina-skincare',
-    slug: 'lumina-botanicals-ad-campaign',
-    title: 'Lumina Botanicals — Organic Radiance Ad Creative',
-    client_brand: 'Lumina Botanicals',
-    category: 'ads',
-    description: '"Your product deserves more than just a photo." A scroll-stopping product ad creative turning ordinary product photography into an aesthetic, premium digital billboard that demands attention in social feeds.',
-    alt_text: 'Aesthetic skincare serum bottle with warm amber lighting and serif typography',
-    featured: true,
-    published: true,
-    sort_order: 3,
-    offerTag: 'Trending Creative',
-    portfolio_images: [{ id: 'img-lumina', storage_path: '/assets/portfolio/lumina-skincare-ad.jpg', image_order: 1, width: 1200, height: 900 }]
-  },
-  {
-    id: 'item-artisan-brew',
-    slug: 'artisan-brew-bakery-poster',
-    title: 'Artisan Brew & Bakery — Promotional Ad Poster',
-    client_brand: 'Artisan Brew Co.',
-    category: 'posters',
-    description: '"Your food deserves to look as irresistible as it tastes." Commercial promotional poster combining rich food photography with classical editorial typography to drive café footfall and online orders.',
-    alt_text: 'Commercial café and bakery promotional poster featuring an iced latte, fresh croissant, and warm typography',
-    featured: true,
-    published: true,
-    sort_order: 2,
-    offerTag: 'Specialty Format',
-    portfolio_images: [{ id: 'img-brew', storage_path: '/assets/portfolio/artisan-brew-poster.jpg', image_order: 1, width: 1200, height: 900 }]
-  },
-  {
-    id: 'item-velvet-fig',
-    slug: 'velvet-fig-luxury-fragrance',
-    title: 'Velvet Fig Eau de Parfum — Luxury Social Creative',
-    client_brand: 'Artisanal Fragrances',
-    category: 'social_media',
-    description: '"You sell the product. We design the impact." Bespoke social media visual system turning product launches into captivating, luxury brand experiences.',
-    alt_text: 'High-end luxury perfume advertisement with gold cap, textured stone base, and soft botanical shadows',
-    featured: true,
-    published: true,
-    sort_order: 1,
-    offerTag: 'Featured',
-    portfolio_images: [{ id: 'img-velvet', storage_path: '/assets/portfolio/velvet-fig-fragrance.jpg', image_order: 1, width: 1200, height: 900 }]
-  }
-];
+// ─── Storage keys shared with the admin dashboard ──────────────────────────
+const PRODUCTS_STORE_KEY = 'aayat_custom_products';
+const CATEGORIES_STORE_KEY = 'aayat_custom_categories';
+const OFFERS_STORE_KEY = 'aayat_offers';
 
-// ─── Default offer seed ────────────────────────────────────────────────────
-const SEED_OFFERS = [
-  {
-    id: 'offer-1',
-    title: 'New Brand Launch Starter Package',
-    code: 'IMPACT25',
-    discount: '20% OFF on 3+ Ad Creatives',
-    expiry: 'Limited Slots This Month',
-    active: true
-  }
-];
+// The columns the client site is allowed to read (AGENTS 6.2 — explicit select).
+const ITEM_COLUMNS =
+  'id,slug,title,client_brand,category,description,alt_text,offer_tag,' +
+  'featured,published,sort_order,created_at,' +
+  'portfolio_images(id,storage_path,image_order,width,height)';
+
+// Categories resolved on the last read, used for synchronous label lookups.
+let liveCategories = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC API
@@ -74,87 +37,120 @@ const SEED_OFFERS = [
 
 /**
  * Fetch published portfolio items for the client site.
- * Tries Supabase first, falls back to localStorage mirror, then seed data.
+ * Supabase is authoritative: an empty result means the admin has published
+ * nothing yet, and the page renders its empty state.
+ * @returns {Promise<Array<object>>} The published portfolio items.
  */
 export async function fetchPublishedItems() {
-  // 1. Try Supabase REST
   try {
     const items = await _fetchFromSupabase();
-    if (items && items.length > 0) {
-      // Mirror to localStorage for offline/fast next-load
-      localStorage.setItem('aayat_custom_products', JSON.stringify(_mapToLocalFormat(items)));
-      return items;
+    const normalized = (items || []).map(_normalizeItem);
+    // Mirror for the offline path only. Never read back as authoritative.
+    localStorage.setItem(PRODUCTS_STORE_KEY, JSON.stringify(normalized));
+    return normalized;
+  } catch (e) {
+    console.warn('[portfolio.js] Supabase unreachable, using the local mirror:', e.message);
+    return _getLocalStorageItems() || [];
+  }
+}
+
+/**
+ * Fetch the shared category list.
+ * The admin portal and the client site read the same public.categories table.
+ * @returns {Promise<Array<{value: string, label: string}>>} The category list.
+ */
+export async function fetchCategories() {
+  try {
+    const categories = await _fetchCategoriesFromSupabase();
+    if (Array.isArray(categories)) {
+      liveCategories = categories;
+      localStorage.setItem(CATEGORIES_STORE_KEY, JSON.stringify(categories));
+      return categories;
     }
   } catch (e) {
-    // Supabase unreachable — fall through
+    console.warn('[portfolio.js] Supabase unreachable, using the local mirror:', e.message);
   }
 
-  // 2. localStorage mirror (written by admin dashboard)
-  const localItems = _getLocalStorageItems();
-  if (localItems && localItems.length > 0) {
-    return localItems;
+  const stored = _getStoredCategories();
+  if (stored) {
+    liveCategories = stored;
+    return stored;
   }
+  return [];
+}
 
-  // 3. Seed data
-  return SEED_PORTFOLIO_ITEMS;
+/**
+ * The display name of a category value.
+ * Uses the shared list when it is known, and falls back to the slug.
+ * @param {string} value - The category value.
+ * @returns {string} The label to show.
+ */
+export function getCategoryLabel(value) {
+  if (!value) return 'Creative Work';
+  const match = liveCategories.find(c => c.value === value);
+  if (match) return match.label;
+  return value
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**
  * Fetch a single published portfolio item by slug.
+ * @param {string} slug - The item slug.
+ * @returns {Promise<object|null>} The item, or null when it is not published.
  */
 export async function fetchPublishedItemBySlug(slug) {
   if (!slug || typeof slug !== 'string') return null;
 
-  // 1. Try Supabase
   try {
-    const item = await _fetchSlugFromSupabase(slug);
-    if (item) return item;
-  } catch (e) {}
+    const items = await _fetchSlugFromSupabase(slug);
+    if (Array.isArray(items) && items.length > 0) {
+      return _normalizeItem(items[0]);
+    }
+    return null;
+  } catch (e) {
+    console.warn('[portfolio.js] Supabase unreachable, using the local mirror:', e.message);
+  }
 
-  // 2. Local fallback
-  const all = _getLocalStorageItems() || SEED_PORTFOLIO_ITEMS;
+  const all = _getLocalStorageItems() || [];
   return all.find(i => i.slug === slug) || null;
 }
 
 /**
  * Get active offers to display on the client site (banner / promos section).
- * Uses localStorage mirror written by admin dashboard, with Supabase as primary.
+ * Supabase is authoritative: an empty list means no offer is running.
+ * @returns {Promise<Array<object>>} The active offers.
  */
 export async function fetchActiveOffers() {
-  // 1. Try Supabase site_settings
   try {
     const offers = await _fetchOffersFromSupabase();
-    if (offers && offers.length > 0) {
-      localStorage.setItem('aayat_offers', JSON.stringify(offers));
+    if (Array.isArray(offers)) {
+      localStorage.setItem(OFFERS_STORE_KEY, JSON.stringify(offers));
       return offers.filter(o => o.active !== false);
     }
-  } catch (e) {}
-
-  // 2. localStorage mirror
+  } catch (e) {
+    console.warn('[portfolio.js] Supabase unreachable, using the local mirror:', e.message);
+  }
   return getLiveOffers();
 }
 
 /**
  * Synchronous getter used by home.js for immediate banner display.
- * Reads directly from localStorage (written by admin dashboard).
+ * Reads the localStorage mirror written after the last successful Supabase read.
+ * @returns {Array<object>} The mirrored active offers.
  */
 export function getLiveOffers() {
-  const stored = localStorage.getItem('aayat_offers');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) return parsed.filter(o => o.active !== false);
-    } catch (e) {}
-  }
-  return SEED_OFFERS;
-}
+  const stored = localStorage.getItem(OFFERS_STORE_KEY);
+  if (!stored) return [];
 
-/**
- * Synchronous getter for portfolio items from localStorage.
- * Used for instant rendering while async Supabase fetch is in-flight.
- */
-export function getLivePortfolioItems() {
-  return _getLocalStorageItems() || SEED_PORTFOLIO_ITEMS;
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(o => o.active !== false);
+  } catch (e) {
+    console.warn('[portfolio.js] offer mirror parse error:', e);
+    return [];
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -168,8 +164,7 @@ async function _fetchFromSupabase() {
   }
 
   const endpoint = `${config.supabaseUrl}/rest/v1/portfolio_items` +
-    `?select=id,slug,title,client_brand,category,description,alt_text,featured,published,sort_order,created_at,` +
-    `portfolio_images(id,storage_path,image_order,width,height)` +
+    `?select=${ITEM_COLUMNS}` +
     `&published=eq.true&order=sort_order.desc`;
 
   const controller = new AbortController();
@@ -190,6 +185,28 @@ async function _fetchFromSupabase() {
   return resp.json();
 }
 
+async function _fetchCategoriesFromSupabase() {
+  const config = getConfig();
+  if (!config.supabaseUrl || !config.supabaseAnonKey || config.supabaseAnonKey.includes('placeholder')) {
+    throw new Error('Supabase not configured');
+  }
+
+  const endpoint = `${config.supabaseUrl}/rest/v1/categories` +
+    `?select=value,label,sort_order&order=sort_order.asc`;
+
+  const resp = await fetch(endpoint, {
+    headers: {
+      'apikey': config.supabaseAnonKey,
+      'Authorization': `Bearer ${config.supabaseAnonKey}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!resp.ok) throw new Error(`Supabase error: ${resp.status}`);
+  const data = await resp.json();
+  return Array.isArray(data) ? data : null;
+}
+
 async function _fetchSlugFromSupabase(slug) {
   const config = getConfig();
   if (!config.supabaseUrl || !config.supabaseAnonKey || config.supabaseAnonKey.includes('placeholder')) {
@@ -197,19 +214,18 @@ async function _fetchSlugFromSupabase(slug) {
   }
 
   const endpoint = `${config.supabaseUrl}/rest/v1/portfolio_items` +
-    `?select=id,slug,title,client_brand,category,description,alt_text,featured,published,sort_order,created_at,` +
-    `portfolio_images(id,storage_path,image_order,width,height)` +
+    `?select=${ITEM_COLUMNS}` +
     `&slug=eq.${encodeURIComponent(slug)}&published=eq.true`;
 
   const resp = await fetch(endpoint, {
     headers: {
       'apikey': config.supabaseAnonKey,
       'Authorization': `Bearer ${config.supabaseAnonKey}`,
-      'Accept': 'application/vnd.pgrst.object+json'
+      'Accept': 'application/json'
     }
   });
 
-  if (!resp.ok) throw new Error(`Not found: ${resp.status}`);
+  if (!resp.ok) throw new Error(`Supabase error: ${resp.status}`);
   return resp.json();
 }
 
@@ -224,30 +240,45 @@ async function _fetchOffersFromSupabase() {
     headers: {
       'apikey': config.supabaseAnonKey,
       'Authorization': `Bearer ${config.supabaseAnonKey}`,
-      'Accept': 'application/vnd.pgrst.object+json'
+      'Accept': 'application/json'
     }
   });
 
-  if (!resp.ok) throw new Error('No offers data');
-  const data = await resp.json();
-  if (!data || !data.offers_json) return null;
-  return Array.isArray(data.offers_json) ? data.offers_json : JSON.parse(data.offers_json);
+  if (!resp.ok) throw new Error(`Supabase error: ${resp.status}`);
+
+  // site_settings is a singleton, so PostgREST returns a one-row array.
+  const rows = await resp.json();
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const offers = rows[0].offers_json;
+  if (Array.isArray(offers)) return offers;
+  if (typeof offers === 'string') {
+    try {
+      return JSON.parse(offers);
+    } catch (e) {
+      console.warn('[portfolio.js] offers_json is not valid JSON:', e);
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
- * Read items from localStorage mirror (admin dashboard writes this on every save).
- * Normalizes both the admin-format and Supabase-format objects into a consistent shape.
+ * Read items from the localStorage mirror.
+ * Returns null when the mirror is absent or unusable; an empty array is a valid
+ * mirror that means "the admin published nothing".
+ * @returns {Array<object>|null} The mirrored items, or null.
  */
 function _getLocalStorageItems() {
-  const stored = localStorage.getItem('aayat_custom_products');
+  const stored = localStorage.getItem(PRODUCTS_STORE_KEY);
   if (!stored) return null;
 
   try {
     const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    if (!Array.isArray(parsed)) return null;
 
     return parsed
-      .filter(p => p.published !== false) // Only show published items
+      .filter(p => p.published !== false)
       .map((p, idx) => ({
         id: p.id || `item-${idx}`,
         slug: p.slug || generateSlug(p.title),
@@ -256,10 +287,10 @@ function _getLocalStorageItems() {
         category: p.category,
         description: p.description || p.desc,
         alt_text: p.alt_text || p.title,
+        offerTag: p.offerTag || p.offer_tag || null,
         featured: p.featured !== false,
         published: p.published !== false,
         sort_order: p.sort_order || idx,
-        offerTag: p.offerTag || null,
         portfolio_images: p.portfolio_images && p.portfolio_images.length > 0
           ? p.portfolio_images
           : [{ id: `img-${idx}`, storage_path: p.image || '/assets/brand/monogram.png', image_order: 1, width: 1200, height: 900 }]
@@ -270,25 +301,45 @@ function _getLocalStorageItems() {
   }
 }
 
-/** Convert Supabase items to the format localStorage stores (for mirroring). */
-function _mapToLocalFormat(items) {
-  return items.map(p => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    client_brand: p.client_brand,
-    brand: p.client_brand,
-    category: p.category,
-    description: p.description,
-    desc: p.description,
-    alt_text: p.alt_text || p.title,
-    featured: p.featured,
-    published: p.published,
-    sort_order: p.sort_order,
-    offerTag: p.offerTag || null,
-    image: p.portfolio_images && p.portfolio_images.length > 0 ? p.portfolio_images[0].storage_path : '/assets/brand/monogram.png',
-    portfolio_images: p.portfolio_images || []
-  }));
+/**
+ * Read the mirrored category list.
+ * @returns {Array<{value: string, label: string}>|null} The mirror, or null.
+ */
+function _getStoredCategories() {
+  const stored = localStorage.getItem(CATEGORIES_STORE_KEY);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.map(c => ({ value: c.value, label: c.label }));
+  } catch (e) {
+    console.warn('[portfolio.js] category mirror parse error:', e);
+    return null;
+  }
+}
+
+/**
+ * Normalises a Supabase row into the shape the page modules render.
+ * The database column is `offer_tag`; the pages use `offerTag`.
+ * @param {object} row - A row from public.portfolio_items.
+ * @returns {object} The normalised item.
+ */
+function _normalizeItem(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    client_brand: row.client_brand,
+    category: row.category,
+    description: row.description,
+    alt_text: row.alt_text,
+    offerTag: row.offer_tag || null,
+    featured: row.featured !== false,
+    published: row.published !== false,
+    sort_order: row.sort_order,
+    portfolio_images: row.portfolio_images || []
+  };
 }
 
 function generateSlug(text) {

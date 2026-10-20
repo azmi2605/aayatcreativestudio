@@ -3,7 +3,7 @@
  * Portfolio list page filtering and rendering
  */
 
-import { fetchPublishedItems } from '../api/portfolio.js';
+import { fetchPublishedItems, fetchCategories, getCategoryLabel } from '../api/portfolio.js';
 
 let allItems = [];
 
@@ -43,8 +43,15 @@ async function loadPortfolio() {
   if (!container) return;
 
   try {
-    allItems = await fetchPublishedItems();
-    
+    // The category list and the projects come from the same shared source
+    // the admin portal writes to.
+    const [items, categories] = await Promise.all([
+      fetchPublishedItems(),
+      fetchCategories()
+    ]);
+    allItems = items;
+    renderFilterButtons(categories);
+
     // Check URL query parameter (e.g. ?category=ads)
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get('category') || 'all';
@@ -61,22 +68,26 @@ async function loadPortfolio() {
 }
 
 function initFilterControls() {
-  const buttons = document.querySelectorAll('.filter-btn');
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const category = btn.getAttribute('data-category');
-      
-      // Update URL query parameter cleanly without reloading
-      const url = new URL(window.location);
-      if (category === 'all') {
-        url.searchParams.delete('category');
-      } else {
-        url.searchParams.set('category', category);
-      }
-      window.history.pushState({}, '', url);
+  const filterBar = document.querySelector('.filter-bar');
+  if (!filterBar) return;
 
-      applyFilter(category);
-    });
+  // Delegated listener — it also serves the buttons rendered from the
+  // shared category list.
+  filterBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    const category = btn.getAttribute('data-category');
+
+    // Update URL query parameter cleanly without reloading
+    const url = new URL(window.location);
+    if (category === 'all') {
+      url.searchParams.delete('category');
+    } else {
+      url.searchParams.set('category', category);
+    }
+    window.history.pushState({}, '', url);
+
+    applyFilter(category);
   });
 
   // Handle back/forward navigation
@@ -84,6 +95,43 @@ function initFilterControls() {
     const urlParams = new URLSearchParams(window.location.search);
     const category = urlParams.get('category') || 'all';
     applyFilter(category);
+  });
+}
+
+/**
+ * Builds the filter bar from the shared category list, plus any category that
+ * only exists on a project. A category added in the admin portal shows up here
+ * without a code change.
+ * @param {Array<object>} categories - The shared category list.
+ */
+function renderFilterButtons(categories) {
+  const filterBar = document.querySelector('.filter-bar');
+  if (!filterBar) return;
+
+  // Keep the static "All Projects" button and drop the rendered ones.
+  const allBtn = filterBar.querySelector('[data-category="all"]');
+  filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+    if (btn !== allBtn) btn.remove();
+  });
+
+  const known = new Set(categories.map(c => c.value));
+  const buttons = categories.map(c => ({ value: c.value, label: c.label }));
+
+  // Categories that are only referenced by a project still deserve a filter.
+  allItems.forEach(item => {
+    if (item.category && !known.has(item.category)) {
+      known.add(item.category);
+      buttons.push({ value: item.category, label: getCategoryLabel(item.category) });
+    }
+  });
+
+  buttons.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.setAttribute('data-category', cat.value);
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = cat.label;
+    filterBar.appendChild(btn);
   });
 }
 
@@ -167,7 +215,7 @@ function createWorkCard(item) {
   const category = document.createElement('span');
   category.className = 'text-eyebrow';
   category.style.fontSize = '0.75rem';
-  category.textContent = formatCategory(item.category);
+  category.textContent = getCategoryLabel(item.category);
   catRow.appendChild(category);
 
   if (item.offerTag) {
@@ -214,11 +262,3 @@ function createWorkCard(item) {
   return article;
 }
 
-function formatCategory(cat) {
-  switch (cat) {
-    case 'ads': return 'Ad Creative';
-    case 'posters': return 'Poster Design';
-    case 'social_media': return 'Social Media';
-    default: return 'Creative Work';
-  }
-}

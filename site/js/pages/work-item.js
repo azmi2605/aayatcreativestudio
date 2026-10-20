@@ -3,7 +3,7 @@
  * Project detail page: loads item by slug parameter, updates dynamic title and renders stacked images
  */
 
-import { fetchPublishedItemBySlug, fetchPublishedItems } from '../api/portfolio.js';
+import { fetchPublishedItemBySlug, fetchPublishedItems, fetchCategories, getCategoryLabel } from '../api/portfolio.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   initMobileMenu();
@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
+    // The shared category list gives the page the same labels the admin uses.
+    await fetchCategories();
+
     let item = await fetchPublishedItemBySlug(slug);
 
     // Fallback search in all published items if single fetch returned null
@@ -122,7 +125,7 @@ function renderItem(container, item) {
 
   const category = document.createElement('span');
   category.className = 'text-eyebrow';
-  category.textContent = formatCategory(item.category);
+  category.textContent = getCategoryLabel(item.category);
   category.style.marginBottom = 'var(--cs-space-3)';
   infoCol.appendChild(category);
 
@@ -191,15 +194,6 @@ function renderItem(container, item) {
   layout.appendChild(infoCol);
 
   container.appendChild(layout);
-}
-
-function formatCategory(cat) {
-  switch (cat) {
-    case 'ads': return 'Ad Creative';
-    case 'posters': return 'Poster Design';
-    case 'social_media': return 'Social Media';
-    default: return 'Creative Work';
-  }
 }
 
 function initMobileMenu() {

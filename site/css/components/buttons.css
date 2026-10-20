@@ -98,3 +98,47 @@
   padding: var(--cs-space-2) var(--cs-space-4);
   font-size: var(--cs-text-small);
 }
+
+/* Icon-only button (e.g. the remove-category action next to a dropdown) */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  background-color: var(--cs-color-surface);
+  border: var(--cs-border-strong);
+  border-radius: var(--cs-radius-sm);
+  color: var(--cs-color-ink-muted);
+  cursor: pointer;
+  transition: background-color var(--cs-transition-fast),
+              color var(--cs-transition-fast),
+              border-color var(--cs-transition-fast);
+}
+
+/* Destructive hover — neutral until the admin points at the button */
+.btn-icon:hover:not(:disabled) {
+  background-color: var(--cs-color-error-tint);
+  border-color: var(--cs-color-error);
+  color: var(--cs-color-error);
+}
+
+.btn-icon:disabled {
+  background-color: var(--cs-color-bg);
+  border-color: var(--cs-color-line);
+  color: var(--cs-color-ink-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-icon:focus-visible {
+  outline: var(--cs-border-focus);
+  outline-offset: var(--cs-focus-ring-offset);
+}
+
+.btn-icon-glyph {
+  width: 16px;
+  height: 16px;
+}
