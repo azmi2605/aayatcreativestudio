@@ -9,9 +9,9 @@
     { "src": "/includes/(.*)", "dest": "/includes/$1" },
     { "src": "/js/(.*)", "dest": "/site/js/$1" },
     { "src": "/about/?", "dest": "/site/about/index.html" },
-    { "src": "/work/?", "dest": "/site/work/index.html" },
+    { "src": "/work/?", "dest": "/work/index.html" },
     { "src": "/contact/?", "dest": "/site/contact/index.html" },
-    { "src": "/work/item(.*)", "dest": "/site/work/item.html" },
+    { "src": "/work/item(.*)", "dest": "/work/item.html" },
     { "src": "/site/?", "dest": "/site/index.html" },
     { "src": "/site/(.*)", "dest": "/site/$1" }
   ]
