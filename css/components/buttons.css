@@ -26,13 +26,6 @@
   white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-  .btn {
-    white-space: normal;
-    text-align: center;
-  }
-}
-
 /* Primary Button */
 .btn-primary {
   background-color: var(--cs-color-brown);
