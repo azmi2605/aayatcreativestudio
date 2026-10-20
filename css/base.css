@@ -244,6 +244,26 @@ input, button, textarea, select {
   }
 }
 
+/* Mobile: tighter section padding */
+@media (max-width: 640px) {
+  .section {
+    padding-top: var(--cs-space-6);
+    padding-bottom: var(--cs-space-6);
+  }
+
+  .hero-section {
+    padding-top: var(--cs-space-8);
+    padding-bottom: var(--cs-space-8);
+  }
+
+  .hero-section .container > div {
+    display: flex;
+    gap: var(--cs-space-4);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* ==========================================================================
    5. Reduced Motion Override (DESIGN 13, 15)
    ========================================================================== */

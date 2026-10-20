@@ -62,32 +62,48 @@ function initMobileMenu() {
   const nav = document.querySelector('.site-nav');
   if (!menuBtn || !nav) return;
 
+  // Create overlay element
+  let overlay = document.querySelector('.mobile-nav-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'mobile-nav-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  // Wrap nav in mobile-nav-sheet if not already
+  if (!nav.parentElement.classList.contains('mobile-nav-sheet')) {
+    const sheet = document.createElement('nav');
+    sheet.className = 'mobile-nav-sheet';
+    nav.parentElement.insertBefore(sheet, nav);
+    sheet.appendChild(nav);
+    sheet.setAttribute('id', 'mobile-nav-sheet');
+  }
+  const sheet = document.getElementById('mobile-nav-sheet');
+
+  function openMenu() {
+    menuBtn.setAttribute('aria-expanded', 'true');
+    sheet.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    menuBtn.setAttribute('aria-expanded', 'false');
+    sheet.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
   menuBtn.addEventListener('click', () => {
     const isExpanded = menuBtn.getAttribute('aria-expanded') === 'true';
-    menuBtn.setAttribute('aria-expanded', String(!isExpanded));
-    if (!isExpanded) {
-      nav.style.display = 'flex';
-      nav.style.flexDirection = 'column';
-      nav.style.position = 'absolute';
-      nav.style.top = '100%';
-      nav.style.left = '0';
-      nav.style.right = '0';
-      nav.style.backgroundColor = 'var(--cs-color-surface)';
-      nav.style.padding = 'var(--cs-space-5)';
-      nav.style.borderBottom = 'var(--cs-border-default)';
-      nav.style.gap = 'var(--cs-space-4)';
-    } else {
-      nav.style.display = '';
-      nav.style.flexDirection = '';
-      nav.style.position = '';
-      nav.style.top = '';
-      nav.style.left = '';
-      nav.style.right = '';
-      nav.style.backgroundColor = '';
-      nav.style.padding = '';
-      nav.style.borderBottom = '';
-      nav.style.gap = '';
-    }
+    if (isExpanded) closeMenu(); else openMenu();
+  });
+
+  overlay.addEventListener('click', closeMenu);
+
+  // Close menu when clicking a nav link
+  nav.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', closeMenu);
   });
 }
 

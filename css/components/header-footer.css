@@ -195,3 +195,43 @@
 #main-content > .section:first-child:not(.hero-section) {
   padding-top: 0;
 }
+
+/* ==========================================================================
+   Mobile Navigation Sheet (DESIGN 8.4)
+   ========================================================================== */
+.mobile-nav-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background-color: var(--cs-color-surface);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-nav-sheet.open {
+  transform: translateX(0);
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background-color: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-nav-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 1024px) {
+  .mobile-nav-toggle,
+  .mobile-nav-sheet,
+  .mobile-nav-overlay {
+    display: none !important;
+  }
+}
