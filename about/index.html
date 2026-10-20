@@ -141,7 +141,7 @@
           Tell us about your brand's goals and timeline. We're currently taking on select commissions for the upcoming
           season.
         </p>
-        <a href="https://www.instagram.com/direct/t/18137977882528127/" class="btn btn-primary" target="_blank"
+        <a href="https://www.instagram.com/direct/t/18137977882528127/" class="btn btn-primary cs-sweep" target="_blank"
           rel="noopener noreferrer">Submit a Project Brief</a>
       </div>
     </section>
@@ -227,9 +227,9 @@
     ];
 
     // Builds one service card using DOM methods (safe: text is set via textContent).
-    function createServiceCard(service) {
+    function createServiceCard(service, idx) {
       const card = document.createElement('article');
-      card.className = 'service-card';
+      card.className = 'service-card card-lift cs-reveal cs-delay-' + Math.min(idx, 4);
 
       const title = document.createElement('h3');
       title.className = 'service-card__title';
@@ -240,7 +240,7 @@
       desc.textContent = service.description;
 
       const divider = document.createElement('div');
-      divider.className = 'service-card__divider';
+      divider.className = 'service-card__divider cs-divider';
 
       const list = document.createElement('ul');
       list.className = 'service-card__list';
@@ -259,6 +259,21 @@
       if (!grid) return; // valid here: this return is inside a function
 
       grid.replaceChildren(...SERVICES.map(createServiceCard));
+
+      // Staggered scroll reveal — plays once, respects prefers-reduced-motion
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('cs-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.cs-reveal').forEach((el) => observer.observe(el));
+      } else {
+        document.querySelectorAll('.cs-reveal').forEach((el) => el.classList.add('cs-visible'));
+      }
     }
 
     // Module scripts are deferred, so the DOM is ready; this also covers any edge case.

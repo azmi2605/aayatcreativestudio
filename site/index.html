@@ -49,7 +49,8 @@
           <span class="text-eyebrow">Ads & Poster Designer</span>
           <h1 id="hero-title" class="text-display"
             style="margin-top: var(--cs-space-3); margin-bottom: var(--cs-space-5);">
-            You sell the product. We design the impact.
+            <span class="cs-hero-line" style="--cs-delay: 0s;">You sell the product.</span>
+            <span class="cs-hero-line" style="--cs-delay: 0.15s;">We design the impact.</span>
           </h1>
           <p class="text-body-lg text-muted" style="margin-bottom: var(--cs-space-6);">
             Your product deserves more than just a photo. We craft aesthetic, scroll-stopping promotional posters,
@@ -57,7 +58,7 @@
           </p>
           <div style="display: flex; gap: var(--cs-space-4); flex-wrap: wrap;">
             <a href="/work/" class="btn btn-secondary">Explore Selected Work</a>
-            <a id="hero-cta-btn" class="btn btn-primary">Start a Project</a>
+            <a id="hero-cta-btn" class="btn btn-primary cs-sweep">Start a Project</a>
           </div>
         </div>
       </div>
@@ -104,7 +105,7 @@
 
         <div id="services-cta" style="margin-top: var(--cs-space-8); text-align: center; display: none;">
           <p class="text-small text-muted" style="margin-bottom: var(--cs-space-4);">Custom packages available.</p>
-          <a id="services-cta-btn" class="btn btn-primary">Start a Project</a>
+          <a id="services-cta-btn" class="btn btn-primary cs-sweep">Start a Project</a>
         </div>
       </div>
     </section>
@@ -119,7 +120,7 @@
           style="margin-left: auto; margin-right: auto; margin-bottom: var(--cs-space-6);">
           Share your project requirements with us and receive a bespoke creative brief response within 24 hours.
         </p>
-        <a id="footer-cta-btn" class="btn btn-primary">Start a Project with AayatCreativeStudio</a>
+        <a id="footer-cta-btn" class="btn btn-primary cs-sweep">Start a Project with AayatCreativeStudio</a>
       </div>
     </section>
   </main>
@@ -180,10 +181,11 @@
       if (ctaBtn) document.getElementById('services-cta').style.display = 'block';
     } else {
       grid.innerHTML = '';
-      SERVICES.forEach((service) => {
+      SERVICES.forEach((service, idx) => {
         const article = document.createElement('article');
+        article.className = 'card-lift cs-reveal cs-delay-' + Math.min(idx, 4);
         article.style.cssText =
-          'display:flex;flex-direction:column;height:100%;' +
+          'display:flex;flex-direction:column;' +
           'padding:var(--cs-space-5);' +
           'border:var(--cs-border-default);' +
           'border-radius:var(--cs-radius-sm);' +
@@ -210,6 +212,7 @@
         article.appendChild(desc);
 
         const divider = document.createElement('div');
+        divider.className = 'cs-divider';
         divider.style.cssText =
           'height:1px;' +
           'background:var(--cs-color-gold);' +
@@ -252,6 +255,21 @@
 
         grid.appendChild(article);
       });
+
+      // Staggered scroll reveal — plays once, respects prefers-reduced-motion
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('cs-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.cs-reveal').forEach((el) => observer.observe(el));
+      } else {
+        document.querySelectorAll('.cs-reveal').forEach((el) => el.classList.add('cs-visible'));
+      }
 
       const cta = document.getElementById('services-cta');
       if (cta) cta.style.display = 'block';
