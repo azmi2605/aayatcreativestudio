@@ -1,5 +1,9 @@
 {
   "cleanUrls": true,
   "framework": null,
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "routes": [
+    { "src": "/", "status": 301, "headers": { "Location": "/site/" } },
+    { "src": "/site/(.*)", "dest": "/site/$1" }
+  ]
 }
