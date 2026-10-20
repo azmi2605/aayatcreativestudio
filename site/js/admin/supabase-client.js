@@ -189,64 +189,6 @@ export async function adminToggleCategoryActive(value, isActive) {
   return data;
 }
 
-// ─── SERVICES (shared admin <-> client list for Capabilities section) ─────
-
-/** Fetch all services (admin view, includes inactive). */
-export async function adminFetchServices() {
-  const client = await getSupabaseClient();
-  const { data, error } = await client
-    .from('services')
-    .select('id, category_name, description, sort_order, is_active, items')
-    .order('sort_order', { ascending: true });
-  if (error) throw error;
-  return data || [];
-}
-
-/** Insert a new service. */
-export async function adminInsertService(service) {
-  const client = await getSupabaseClient();
-  const { data, error } = await client
-    .from('services')
-    .insert([service])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-/** Update a service by ID. */
-export async function adminUpdateService(id, updates) {
-  const client = await getSupabaseClient();
-  const { data, error } = await client
-    .from('services')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-/** Delete a service by ID. */
-export async function adminDeleteService(id) {
-  const client = await getSupabaseClient();
-  const { error } = await client.from('services').delete().eq('id', id);
-  if (error) throw error;
-}
-
-/** Soft-delete / reactivate a service by flipping its is_active flag. */
-export async function adminToggleServiceActive(id, isActive) {
-  const client = await getSupabaseClient();
-  const { data, error } = await client
-    .from('services')
-    .update({ is_active: !!isActive, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select('id, category_name, is_active')
-    .single();
-  if (error) throw error;
-  return data;
-}
-
 // ─── STORAGE ────────────────────────────────────────────────────────────────
 
 /** Upload media file (image or video) to Supabase Storage. Returns { path, publicUrl }. */

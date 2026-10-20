@@ -41,37 +41,7 @@
           <h2 style="margin-top: var(--cs-space-2);">What We Deliver</h2>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--cs-space-6);">
-          <div style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-2);">01. Advertising Creatives</h3>
-            <p class="text-small text-muted" style="margin-bottom: var(--cs-space-4);">Static and animated digital ads optimized for paid Meta, Instagram, and web placements.</p>
-            <ul style="list-style: none; font-size: var(--cs-text-small); color: var(--cs-color-ink-muted); display: flex; flex-direction: column; gap: var(--cs-space-2);">
-              <li>&#10003; Direct-response ad sets</li>
-              <li>&#10003; Carousel storyboarding & design</li>
-              <li>&#10003; Product launch hero graphics</li>
-            </ul>
-          </div>
-
-          <div style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-2);">02. Poster & Print Design</h3>
-            <p class="text-small text-muted" style="margin-bottom: var(--cs-space-4);">Bespoke editorial posters, cultural artworks, and collectible event prints.</p>
-            <ul style="list-style: none; font-size: var(--cs-text-small); color: var(--cs-color-ink-muted); display: flex; flex-direction: column; gap: var(--cs-space-2);">
-              <li>&#10003; Large-format event posters</li>
-              <li>&#10003; Print-ready CMYK preparation</li>
-              <li>&#10003; Custom typographic compositions</li>
-            </ul>
-          </div>
-
-          <div style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-2);">03. Social Identity Systems</h3>
-            <p class="text-small text-muted" style="margin-bottom: var(--cs-space-4);">Holistic visual direction that ensures cohesion across all your social touchpoints.</p>
-            <ul style="list-style: none; font-size: var(--cs-text-small); color: var(--cs-color-ink-muted); display: flex; flex-direction: column; gap: var(--cs-space-2);">
-              <li>&#10003; Grid aesthetics & templates</li>
-              <li>&#10003; Story and highlight systems</li>
-              <li>&#10003; Brand guidelines for social</li>
-            </ul>
-          </div>
-        </div>
+        <div id="services-grid" class="services-grid" role="list" aria-label="Services"></div>
       </div>
     </section>
 
@@ -91,5 +61,105 @@
   <div id="site-footer"></div>
 
   <script type="module" src="/js/includes.js"></script>
+  <script type="module">
+    // Static service cards for the "What We Deliver" section (front-end only).
+    const SERVICES = [
+      {
+        num: '01',
+        title: 'Advertising Creatives',
+        description: 'Static and animated digital ads optimized for paid Meta, Instagram, and web placements.',
+        items: ['Direct-response ad sets', 'Carousel storyboarding & design', 'Product launch hero graphics', 'Simple UGC-style product videos', 'Advanced product videos']
+      },
+      {
+        num: '02',
+        title: 'Poster & Print Design',
+        description: 'Bespoke editorial posters, cultural artworks, and collectible event prints.',
+        items: ['Large-format event posters', 'Print-ready CMYK preparation', 'Custom typographic compositions', 'Basic promotional posters', 'Premium product advertisements', 'Poster bundles']
+      },
+      {
+        num: '03',
+        title: 'Social Identity Systems',
+        description: 'Holistic visual direction that ensures cohesion across all your social touchpoints.',
+        items: ['Grid aesthetics & templates', 'Story and highlight systems', 'Brand guidelines for social', 'Single social media posts', '3-post and 5-post sets']
+      },
+      {
+        num: '04',
+        title: 'Stories & Reels',
+        description: 'Short-form vertical designs and edits built for scroll-stopping reach and engagement.',
+        items: ['Instagram story designs', 'Simple reel editing']
+      },
+      {
+        num: '05',
+        title: 'Logo & Branding',
+        description: 'Distinctive mark-making and identity systems that anchor a brand across every touchpoint.',
+        items: ['Basic logo design', 'Custom logo design', 'Logo with brand color palette', 'Mini brand kit']
+      },
+      {
+        num: '06',
+        title: 'Other Creative Designs',
+        description: 'One-off print and collateral pieces for campaigns, events, and everyday brand use.',
+        items: ['Flyers', 'Invitations', 'Menus', 'Banners', 'Business cards']
+      }
+    ];
+
+    const grid = document.getElementById('services-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    SERVICES.forEach((service) => {
+      const card = document.createElement('div');
+      card.style.cssText =
+        'padding:var(--cs-space-5);' +
+        'border:var(--cs-border-default);' +
+        'border-radius:var(--cs-radius-sm);' +
+        'background:var(--cs-color-bg);' +
+        'display:flex;' +
+        'flex-direction:column;' +
+        'height:100%;';
+
+      const title = document.createElement('h3');
+      title.style.cssText =
+        'font-family:var(--cs-font-display);' +
+        'font-size:var(--cs-text-h3);' +
+        'line-height:var(--cs-leading-h3);' +
+        'color:var(--cs-color-brown);' +
+        'font-weight:var(--cs-weight-semibold);' +
+        'margin:0 0 var(--cs-space-2) 0;';
+      title.textContent = `${service.num}. ${service.title}`;
+      card.appendChild(title);
+
+      const desc = document.createElement('p');
+      desc.className = 'text-small text-muted';
+      desc.style.cssText =
+        'margin:0 0 var(--cs-space-4) 0;' +
+        'max-width:none;' +
+        'color:var(--cs-color-ink-muted);';
+      desc.textContent = service.description;
+      card.appendChild(desc);
+
+      const list = document.createElement('ul');
+      list.style.cssText =
+        'list-style:none;' +
+        'margin:0;' +
+        'padding:0;' +
+        'font-size:var(--cs-text-small);' +
+        'color:var(--cs-color-ink-muted);' +
+        'display:flex;' +
+        'flex-direction:column;' +
+        'gap:var(--cs-space-2);';
+      service.items.forEach((item) => {
+        const li = document.createElement('li');
+        li.style.cssText =
+          'margin:0;' +
+          'font:inherit;' +
+          'color:var(--cs-color-brown);';
+        li.innerHTML = `&#10003; ${item}`;
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+
+      grid.appendChild(card);
+    });
+  </script>
 </body>
 </html>

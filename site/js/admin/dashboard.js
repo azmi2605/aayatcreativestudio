@@ -28,12 +28,7 @@ import {
   adminInsertCategory,
   adminDeleteCategory,
   adminUpdateCategory,
-  adminToggleCategoryActive,
-  adminFetchServices,
-  adminInsertService,
-  adminUpdateService,
-  adminDeleteService,
-  adminToggleServiceActive
+  adminToggleCategoryActive
 } from './supabase-client.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,11 +36,9 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 let allItems = [];
 let allOffers = [];
-let allServices = [];
 let selectedImageFile = null;
 let statusHideTimer = null;
 let statusMessageId = 0;
-let editingServiceId = null;
 
 // Upload size limits (match Supabase Storage bucket policy)
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;   // 5 MB for images
@@ -70,12 +63,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   initImageUpload();
   initProductForm();
   initCategoryControls();
-  initServicesControls();
   initOfferForm();
   initLogout();
 
   // Load data
-  await Promise.all([refreshAll(), refreshCategories(), refreshServices()]);
+  await Promise.all([refreshAll(), refreshCategories()]);
   hideStatus(loadingMessageId);
 });
 
@@ -765,19 +757,6 @@ async function refreshCategories() {
   renderCustomCategoryManager();
 }
 
-/** Refreshes the services list from Supabase (with localStorage fallback). */
-async function refreshServices() {
-  try {
-    allServices = await adminFetchServices();
-    localStorage.setItem('aayat_services', JSON.stringify(allServices));
-  } catch (e) {
-    console.warn('Supabase services fetch failed, using localStorage mirror:', e.message);
-    const stored = localStorage.getItem('aayat_services');
-    allServices = stored ? JSON.parse(stored) : [];
-  }
-  renderServicesManager();
-}
-
 /**
  * Adds a category to the shared list so the client site sees it too.
  * Performs a case-insensitive duplicate check on the slug before writing to
@@ -1267,313 +1246,7 @@ function initCategoryControls() {
 }
 
 /**
- * Renders the services manager: every service with name, description preview,
- * active/inactive toggle, and a delete control. Renders inline-edit for the
- * name. This list is the same data the client site reads, so changes here
- * propagate to the Capabilities section on next page load.
- */
-function renderServicesManager() {
-  const manager = document.getElementById('services-manager');
-  if (!manager) return;
 
-  const source = allServices.length ? allServices : [];
-  manager.innerHTML = '';
-
-  if (source.length === 0) {
-    manager.style.display = 'none';
-    return;
-  }
-
-  manager.style.display = 'block';
-
-  const heading = document.createElement('p');
-  heading.style.cssText =
-    'font-size:0.72rem;color:var(--cs-color-ink-muted);margin:0 0 8px 0;font-weight:500;';
-  heading.textContent = 'Services (shown on the Client Site Capabilities section):';
-  manager.appendChild(heading);
-
-  const listEl = document.createElement('div');
-  listEl.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
-  manager.appendChild(listEl);
-
-  source.forEach((svc) => {
-    const isActive = svc.is_active !== false;
-    const isEditing = editingServiceId === svc.id;
-    const itemCount = Array.isArray(svc.items) ? svc.items.filter(i => i && i.is_active !== false).length : 0;
-
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;';
-
-    // Name / inline edit
-    const nameWrap = document.createElement('div');
-    nameWrap.style.cssText =
-      'display:flex;flex-direction:column;gap:4px;min-width:200px;flex:1;';
-
-    const nameDisplay = document.createElement('div');
-    nameDisplay.style.cssText =
-      `font-family:var(--cs-font-display);font-size:1.125rem;color:${isActive ? 'var(--cs-color-brown)' : 'var(--cs-color-ink-muted)'};font-weight:600;${!isActive ? 'text-decoration:line-through;' : ''};`;
-    nameDisplay.textContent = svc.category_name;
-
-    const descPreview = document.createElement('div');
-    descPreview.style.cssText =
-      'font-size:0.8rem;color:var(--cs-color-ink-muted);margin-bottom:2px;';
-    descPreview.textContent = svc.description || '';
-    nameWrap.appendChild(nameDisplay);
-    nameWrap.appendChild(descPreview);
-
-    if (isActive && !isEditing) {
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.title = `Edit "${svc.category_name}"`;
-      editBtn.innerHTML = '✎';
-      editBtn.style.cssText =
-        'background:none;border:none;cursor:pointer;font-size:0.85rem;color:var(--cs-color-gold-deep,#b45309);padding:0;line-height:1;margin-top:2px;';
-      editBtn.addEventListener('click', () => {
-        editingServiceId = svc.id;
-        renderServicesManager();
-      });
-      nameWrap.appendChild(editBtn);
-    }
-
-    row.appendChild(nameWrap);
-
-    // Item count badge
-    const countBadge = document.createElement('span');
-    countBadge.style.cssText =
-      'font-size:0.72rem;color:var(--cs-color-gold-deep,#7D5A1B);background:var(--cs-color-gold-tint,#F3E9D6);padding:2px 8px;border-radius:12px;white-space:nowrap;';
-    countBadge.textContent = `${itemCount} service(s)`;
-    row.appendChild(countBadge);
-
-    // Active toggle
-    const toggleBtn = document.createElement('button');
-    toggleBtn.type = 'button';
-    toggleBtn.title = isActive ? 'Hide from client site' : 'Show on client site';
-    toggleBtn.textContent = isActive ? 'Active' : 'Inactive';
-    toggleBtn.style.cssText = `padding:3px 10px;font-size:0.72rem;border-radius:2px;border:1px solid;cursor:pointer;${isActive ? 'background:var(--cs-color-success-tint);color:var(--cs-color-success);border-color:var(--cs-color-success);' : 'background:var(--cs-color-error-tint);color:var(--cs-color-error);border-color:var(--cs-color-error);'};`;
-    toggleBtn.addEventListener('click', async () => {
-      try {
-        await adminToggleServiceActive(svc.id, !isActive);
-        await refreshServices();
-        const messageId = showStatus(`Service “${svc.category_name}” ${isActive ? 'hidden' : 'shown'} on the client site.`, 'success');
-        setTimeout(() => hideStatus(messageId), 2000);
-      } catch (e) {
-        console.error('Toggle service active failed:', e);
-        showStatus(`Could not ${isActive ? 'hide' : 'show'} “${svc.category_name}”.`, 'error');
-      }
-    });
-    row.appendChild(toggleBtn);
-
-    // Edit service (full: name + description + items)
-    const editSvcBtn = document.createElement('button');
-    editSvcBtn.type = 'button';
-    editSvcBtn.title = `Edit full details for "${svc.category_name}"`;
-    editSvcBtn.textContent = 'Edit details';
-    editSvcBtn.style.cssText = 'padding:3px 10px;font-size:0.72rem;border-radius:2px;border:1px solid var(--cs-color-line);cursor:pointer;background:transparent;color:var(--cs-color-brown);';
-    editSvcBtn.addEventListener('click', () => openServiceEditor(svc));
-    row.appendChild(editSvcBtn);
-
-    // Delete
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.title = `Delete "${svc.category_name}"`;
-    delBtn.innerHTML = '✕';
-    delBtn.style.cssText =
-      'background:none;border:none;cursor:pointer;font-size:0.85rem;line-height:1;color:var(--cs-color-error);padding:0 0 0 2px;';
-    delBtn.addEventListener('click', async () => {
-      const ok = confirm(`Delete “${svc.category_name}"? It will disappear from the Client Site.`);
-      if (!ok) return;
-      try {
-        await adminDeleteService(svc.id);
-        await refreshServices();
-        const messageId = showStatus(`Service “${svc.category_name}” deleted.`, 'success');
-        setTimeout(() => hideStatus(messageId), 2000);
-      } catch (e) {
-        console.error('Delete service failed:', e);
-        showStatus(`Could not delete “${svc.category_name}”.`, 'error');
-      }
-    });
-    row.appendChild(delBtn);
-
-    listEl.appendChild(row);
-  });
-
-  // Add service form
-  const addForm = document.createElement('div');
-  addForm.style.cssText =
-    'margin-top:14px;padding-top:10px;border-top:1px solid var(--cs-color-line);';
-  addForm.innerHTML = `
-    <div style="font-size:0.72rem;color:var(--cs-color-ink-muted);margin:0 0 6px 0;font-weight:500;">Add a new service</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;">
-      <input type="text" id="new-service-name" placeholder="Service name (e.g. Branding)" style="padding:4px 8px;font-size:0.9rem;border:1px solid var(--cs-color-line-strong);border-radius:var(--cs-radius-sm);min-width:150px;font:inherit;">
-      <input type="text" id="new-service-desc" placeholder="Short description" style="padding:4px 8px;font-size:0.9rem;border:1px solid var(--cs-color-line-strong);border-radius:var(--cs-radius-sm);min-width:200px;font:inherit;">
-      <button type="button" id="btn-add-service" class="btn btn-primary" style="padding:4px 12px;font-size:0.85rem;">Add</button>
-    </div>
-    <span id="new-service-error" class="text-small" style="color:var(--cs-color-error);display:none;margin-top:4px;"></span>
-  `;
-  manager.appendChild(addForm);
-
-  const btnAdd = document.getElementById('btn-add-service');
-  const inputName = document.getElementById('new-service-name');
-  const inputDesc = document.getElementById('new-service-desc');
-  const errEl = document.getElementById('new-service-error');
-
-  const doAdd = async () => {
-    const name = (inputName?.value || '').trim();
-    const desc = (inputDesc?.value || '').trim();
-    if (!name) {
-      if (errEl) { errEl.textContent = 'Please enter a service name.'; errEl.style.display = 'block'; }
-      inputName?.focus();
-      return;
-    }
-    if (!(await reverifyAdminAccess())) return;
-    try {
-      const slugKey = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('svc_' + Date.now());
-      // case-insensitive duplicate check on category_name
-      const exists = allServices.some(s => String(s.category_name).toLowerCase() === name.toLowerCase());
-      if (exists) {
-        if (errEl) { errEl.textContent = 'Service already exists.'; errEl.style.display = 'block'; }
-        inputName?.focus();
-        return;
-      }
-      await adminInsertService({
-        category_name: name,
-        description: desc,
-        sort_order: allServices.length,
-        is_active: true,
-        items: []
-      });
-      await refreshServices();
-      if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
-      inputName.value = '';
-      inputDesc.value = '';
-      const messageId = showStatus(`Service “${name}” added.`, 'success');
-      setTimeout(() => hideStatus(messageId), 2500);
-    } catch (e) {
-      console.error('Add service failed:', e);
-      if (errEl) { errEl.textContent = 'Could not add service.'; errEl.style.display = 'block'; }
-    }
-  };
-
-  btnAdd.addEventListener('click', doAdd);
-  [inputName, inputDesc].forEach((inp) => {
-    if (!inp) return;
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); doAdd(); }
-      else if (e.key === 'Escape') { inp.value = ''; }
-    });
-  });
-}
-
-/**
- * Opens a full editor for a service (name, description, service items).
- * @param {object} svc - The service row to edit.
- */
-function openServiceEditor(svc) {
-  const existing = document.getElementById('service-editor-modal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = 'service-editor-modal';
-  modal.style.cssText =
-    'position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;';
-
-  const overlay = document.createElement('div');
-  overlay.style.cssText =
-    'position:absolute;inset:0;background:var(--cs-backdrop-overlay);';
-  overlay.addEventListener('click', () => modal.remove());
-  modal.appendChild(overlay);
-
-  const panel = document.createElement('div');
-  panel.style.cssText =
-    'position:relative;background:var(--cs-color-surface);' +
-    'padding:var(--cs-space-6);border:var(--cs-border-default);' +
-    'border-radius:var(--cs-radius-lg);max-width:560px;width:92%;max-height:90vh;overflow:auto;';
-  modal.appendChild(panel);
-
-  const h = document.createElement('h3');
-  h.style.cssText = 'font-family:var(--cs-font-display);font-size:1.5rem;color:var(--cs-color-brown);margin:0 0 var(--cs-space-4) 0;';
-  h.textContent = `Edit “${svc.category_name}”`;
-  panel.appendChild(h);
-
-  const nameInp = document.createElement('input');
-  nameInp.type = 'text';
-  nameInp.value = svc.category_name;
-  nameInp.style.cssText = 'width:100%;padding:var(--cs-space-3);font-size:1rem;border:1px solid var(--cs-color-line-strong);border-radius:var(--cs-radius-sm);margin-bottom:var(--cs-space-4);font:inherit;';
-  panel.appendChild(nameInp);
-
-  const descInp = document.createElement('textarea');
-  descInp.value = svc.description || '';
-  descInp.rows = 3;
-  descInp.style.cssText = 'width:100%;padding:var(--cs-space-3);font-size:0.9rem;border:1px solid var(--cs-color-line-strong);border-radius:var(--cs-radius-sm);margin-bottom:var(--cs-space-4);font:inherit;';
-  panel.appendChild(descInp);
-
-  const itemsLabel = document.createElement('div');
-  itemsLabel.style.cssText = 'font-size:0.8rem;color:var(--cs-color-ink-muted);margin-bottom:var(--cs-space-2);';
-  itemsLabel.textContent = 'Included services (one per line):';
-  panel.appendChild(itemsLabel);
-
-  const itemsInp = document.createElement('textarea');
-  const activeItems = Array.isArray(svc.items) ? svc.items.filter(i => i && i.label).map(i => i.label) : [];
-  itemsInp.value = activeItems.join('\n');
-  itemsInp.rows = 6;
-  itemsInp.style.cssText = 'width:100%;padding:var(--cs-space-3);font-size:0.9rem;border:1px solid var(--cs-color-line-strong);border-radius:var(--cs-radius-sm);margin-bottom:var(--cs-space-4);font:inherit;';
-  panel.appendChild(itemsInp);
-
-  const err = document.createElement('div');
-  err.id = 'svc-editor-err';
-  err.style.cssText = 'color:var(--cs-color-error);font-size:0.85rem;display:none;margin-bottom:var(--cs-space-3);';
-  panel.appendChild(err);
-
-  const btns = document.createElement('div');
-  btns.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
-  panel.appendChild(btns);
-
-  const cancel = document.createElement('button');
-  cancel.type = 'button';
-  cancel.textContent = 'Cancel';
-  cancel.style.cssText = 'padding:var(--cs-space-2) var(--cs-space-4);font-size:0.9rem;border:1px solid var(--cs-color-line);border-radius:var(--cs-radius-sm);background:transparent;color:var(--cs-color-brown);cursor:pointer;font:inherit;';
-  cancel.addEventListener('click', () => modal.remove());
-  btns.appendChild(cancel);
-
-  const save = document.createElement('button');
-  save.type = 'button';
-  save.textContent = 'Save';
-  save.style.cssText = 'padding:var(--cs-space-2) var(--cs-space-4);font-size:0.9rem;border:none;border-radius:var(--cs-radius-sm);background:var(--cs-color-brown);color:var(--cs-color-on-brown);cursor:pointer;font:inherit;';
-  save.addEventListener('click', async () => {
-    const name = nameInp.value.trim();
-    const desc = descInp.value.trim();
-    if (!name) { err.textContent = 'Please enter a service name.'; err.style.display = 'block'; nameInp.focus(); return; }
-    if (!(await reverifyAdminAccess())) { modal.remove(); return; }
-    const exists = allServices.some(s => s.id !== svc.id && String(s.category_name).toLowerCase() === name.toLowerCase());
-    if (exists) { err.textContent = 'Service already exists.'; err.style.display = 'block'; nameInp.focus(); return; }
-    const rawItems = itemsInp.value.split('\n').map(l => l.trim()).filter(Boolean);
-    const items = rawItems.map(label => ({ label, is_active: true }));
-    try {
-      await adminUpdateService(svc.id, { category_name: name, description: desc, items, is_active: svc.is_active });
-      editingServiceId = null;
-      await refreshServices();
-      modal.remove();
-      const messageId = showStatus(`Service “${name}” updated.`, 'success');
-      setTimeout(() => hideStatus(messageId), 2500);
-    } catch (e) {
-      console.error('Update service failed:', e);
-      err.textContent = 'Could not save service.';
-      err.style.display = 'block';
-    }
-  });
-  btns.appendChild(save);
-}
-
-/**
- * Wires up the "Add service" form. The list itself is rendered by
- * renderServicesManager() after every data refresh.
- */
-function initServicesControls() {
-  // Nothing to wire up here — the add form is rendered dynamically inside
-  // renderServicesManager() with its own event listeners.
-}
-
-/**
  * Enables the remove button only when a real category is selected.
  * The "+ Add New Category..." option is not a category and is not removable.
  */
