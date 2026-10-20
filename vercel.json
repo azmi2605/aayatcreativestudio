@@ -5,6 +5,7 @@
   "routes": [
     { "src": "/", "status": 301, "headers": { "Location": "/site/" } },
     { "src": "/css/(.*)", "dest": "/css/$1" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/includes/(.*)", "dest": "/includes/$1" },
     { "src": "/js/(.*)", "dest": "/site/js/$1" },
     { "src": "/about/?", "dest": "/site/about/index.html" },
