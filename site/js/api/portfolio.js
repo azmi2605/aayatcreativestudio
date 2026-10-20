@@ -20,6 +20,7 @@ import { getConfig } from '../config.js';
 // ─── Storage keys shared with the admin dashboard ──────────────────────────
 const PRODUCTS_STORE_KEY = 'aayat_custom_products';
 const CATEGORIES_STORE_KEY = 'aayat_custom_categories';
+const SERVICES_STORE_KEY = 'aayat_custom_services';
 const OFFERS_STORE_KEY = 'aayat_offers';
 
 // The columns the client site is allowed to read (AGENTS 6.2 — explicit select).
@@ -30,6 +31,9 @@ const ITEM_COLUMNS =
 
 // Categories resolved on the last read, used for synchronous label lookups.
 let liveCategories = [];
+
+// Services resolved on the last read, used for synchronous service-item lookups.
+let liveServices = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUBLIC API
@@ -92,6 +96,46 @@ export function getCategoryLabel(value) {
   return value
     .replace(/[_-]/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Fetch the active services for the Capabilities section.
+ * Reads public.services (is_active = true) sorted by sort_order.
+ * Returns { category_name, description, items[] }. Any price fields in the
+ * database are intentionally ignored — the client never renders pricing.
+ * @returns {Promise<Array<{category_name: string, description: string, items: Array<{label: string, is_active: boolean}>}>>}
+ */
+export async function fetchServices() {
+  try {
+    const services = await _fetchServicesFromSupabase();
+    if (Array.isArray(services)) {
+      liveServices = services;
+      localStorage.setItem(SERVICES_STORE_KEY, JSON.stringify(services));
+      return services;
+    }
+  } catch (e) {
+    console.warn('[portfolio.js] Supabase unreachable, using the local mirror:', e.message);
+  }
+
+  const stored = _getStoredServices();
+  if (stored) {
+    liveServices = stored;
+    return stored;
+  }
+  return [];
+}
+
+/**
+ * The service items for a category, filtered to active ones only.
+ * @param {Array<{label: string, is_active: boolean}>} items
+ * @returns {Array<string>} Active service labels.
+ */
+export function getServiceItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter(i => i && i.is_active !== false)
+    .map(i => i.label)
+    .filter(Boolean);
 }
 
 /**
@@ -193,6 +237,30 @@ async function _fetchCategoriesFromSupabase() {
 
   const endpoint = `${config.supabaseUrl}/rest/v1/categories` +
     `?select=value,label,sort_order,is_active` +
+    `&is_active=eq.true&order=sort_order.asc`;
+
+  const resp = await fetch(endpoint, {
+    cache: 'no-store',
+    headers: {
+      'apikey': config.supabaseAnonKey,
+      'Authorization': `Bearer ${config.supabaseAnonKey}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!resp.ok) throw new Error(`Supabase error: ${resp.status}`);
+  const data = await resp.json();
+  return Array.isArray(data) ? data : null;
+}
+
+async function _fetchServicesFromSupabase() {
+  const config = getConfig();
+  if (!config.supabaseUrl || !config.supabaseAnonKey || config.supabaseAnonKey.includes('placeholder')) {
+    throw new Error('Supabase not configured');
+  }
+
+  const endpoint = `${config.supabaseUrl}/rest/v1/services` +
+    `?select=category_name,description,sort_order,is_active,items` +
     `&is_active=eq.true&order=sort_order.asc`;
 
   const resp = await fetch(endpoint, {
@@ -317,6 +385,24 @@ function _getStoredCategories() {
     return parsed.map(c => ({ value: c.value, label: c.label }));
   } catch (e) {
     console.warn('[portfolio.js] category mirror parse error:', e);
+    return null;
+  }
+}
+
+/**
+ * Read the mirrored services list.
+ * @returns {Array|null} The mirror, or null.
+ */
+function _getStoredServices() {
+  const stored = localStorage.getItem(SERVICES_STORE_KEY);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return null;
+    return parsed;
+  } catch (e) {
+    console.warn('[portfolio.js] service mirror parse error:', e);
     return null;
   }
 }

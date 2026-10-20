@@ -44,3 +44,6 @@ scratch/
 docs/
 assets/
 .env.example
+
+.vercel
+.env*

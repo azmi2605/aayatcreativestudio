@@ -93,26 +93,15 @@
           </p>
         </div>
 
-        <div
-          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--cs-space-6);">
-          <article
-            style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-3);">Ad Creatives</h3>
-            <p class="text-small text-muted">Performance-driven digital ads engineered to capture attention in feeds,
-              enhance click-through rates, and scale your brand identity.</p>
-          </article>
-          <article
-            style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-3);">Poster Design</h3>
-            <p class="text-small text-muted">Striking typography and editorial layouts designed for cultural events,
-              commercial promotions, and premium print installations.</p>
-          </article>
-          <article
-            style="padding: var(--cs-space-5); border: var(--cs-border-default); border-radius: var(--cs-radius-sm); background: var(--cs-color-bg);">
-            <h3 style="margin-bottom: var(--cs-space-3);">Social Media Visuals</h3>
-            <p class="text-small text-muted">Distinctive, unified brand aesthetics that transform profiles into
-              immersive brand experiences with memorable visual systems.</p>
-          </article>
+        <div id="services-grid" class="services-grid" role="list" aria-label="Services">
+          <p id="services-loading" class="text-muted" style="padding: var(--cs-space-6) 0;">Loading services…</p>
+          <p id="services-empty" class="text-muted" style="padding: var(--cs-space-6) 0; display: none;">No services available yet.</p>
+          <p id="services-error" class="text-muted" style="padding: var(--cs-space-6) 0; display: none;">Unable to load services. Please try again later.</p>
+        </div>
+
+        <div id="services-cta" style="margin-top: var(--cs-space-8); text-align: center; display: none;">
+          <p class="text-small text-muted" style="margin-bottom: var(--cs-space-4);">Custom packages available.</p>
+          <a id="services-cta-btn" class="btn btn-primary">Start a Project</a>
         </div>
       </div>
     </section>
@@ -138,6 +127,122 @@
   <!-- Page Logic (Native ES Module) -->
   <script type="module" src="/js/includes.js"></script>
   <script type="module" src="/js/pages/home.js"></script>
+  <script type="module">
+    import { fetchServices, getServiceItems } from '/js/api/portfolio.js';
+    import { INSTAGRAM_DM_URL } from '/js/config.js';
+
+    const grid = document.getElementById('services-grid');
+    const loading = document.getElementById('services-loading');
+    const empty = document.getElementById('services-empty');
+    const error = document.getElementById('services-error');
+    const cta = document.getElementById('services-cta');
+    const ctaBtn = document.getElementById('services-cta-btn');
+
+    if (ctaBtn) {
+      ctaBtn.href = INSTAGRAM_DM_URL;
+      ctaBtn.target = '_blank';
+      ctaBtn.rel = 'noopener noreferrer';
+    }
+
+    (async () => {
+      if (!grid) return;
+      try {
+        const services = await fetchServices();
+        if (loading) loading.style.display = 'none';
+
+        if (!services || services.length === 0) {
+          if (empty) empty.style.display = 'block';
+          return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        grid.innerHTML = '';
+        services.forEach((service) => {
+          const article = document.createElement('article');
+          article.style.cssText =
+            'display:flex;flex-direction:column;height:100%;' +
+            'padding:var(--cs-space-5);' +
+            'border:var(--cs-border-default);' +
+            'border-radius:var(--cs-radius-sm);' +
+            'background:var(--cs-color-bg);';
+
+          const title = document.createElement('h3');
+          title.style.cssText =
+            'font-family:var(--cs-font-display);' +
+            'font-size:var(--cs-text-h3);' +
+            'line-height:var(--cs-leading-h3);' +
+            'color:var(--cs-color-brown);' +
+            'font-weight:var(--cs-weight-semibold);' +
+            'margin:0 0 var(--cs-space-3) 0;';
+          title.textContent = service.category_name;
+          article.appendChild(title);
+
+          const desc = document.createElement('p');
+          desc.className = 'text-small text-muted';
+          desc.style.cssText =
+            'margin:0 0 var(--cs-space-4) 0;' +
+            'max-width:none;' +
+            'color:var(--cs-color-ink-muted);';
+          desc.textContent = service.description;
+          article.appendChild(desc);
+
+          // Thin divider
+          const divider = document.createElement('div');
+          divider.style.cssText =
+            'height:1px;' +
+            'background:var(--cs-color-gold);' +
+            'margin:0 0 var(--cs-space-3) 0;';
+          article.appendChild(divider);
+
+          // Service list
+          const items = getServiceItems(service.items);
+          if (items.length > 0) {
+            const list = document.createElement('ul');
+            list.style.cssText =
+              'margin:0;' +
+              'padding:0;' +
+              'list-style:none;' +
+              'display:flex;' +
+              'flex-direction:column;' +
+              'gap:var(--cs-space-2);';
+            items.forEach((label) => {
+              const li = document.createElement('li');
+              li.style.cssText =
+                'display:flex;' +
+                'align-items:center;' +
+                'gap:var(--cs-space-2);' +
+                'margin:0;' +
+                'font-size:var(--cs-text-small);' +
+                'line-height:var(--cs-leading-small);' +
+                'color:var(--cs-color-brown);';
+              const marker = document.createElement('span');
+              marker.style.cssText =
+                'display:inline-block;' +
+                'width:var(--cs-space-2);' +
+                'height:var(--cs-space-2);' +
+                'background:var(--cs-color-gold-deep);' +
+                'border-radius:50%;' +
+                'flex-shrink:0;';
+              li.appendChild(marker);
+              const text = document.createElement('span');
+              text.textContent = label;
+              li.appendChild(text);
+              list.appendChild(li);
+            });
+            article.appendChild(list);
+          }
+
+          grid.appendChild(article);
+        });
+
+        if (cta) cta.style.display = 'block';
+      } catch (e) {
+        console.error('[services] Failed to render services:', e);
+        if (loading) loading.style.display = 'none';
+        if (error) error.style.display = 'block';
+      }
+    })();
+  </script>
 </body>
 
 </html>
