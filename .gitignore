@@ -42,7 +42,6 @@ scratch/
 
 # Documentation and root raw assets
 docs/
-assets/
 .env.example
 
 .vercel
