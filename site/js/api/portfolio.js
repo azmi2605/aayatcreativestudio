@@ -25,8 +25,8 @@ const OFFERS_STORE_KEY = 'aayat_offers';
 // The columns the client site is allowed to read (AGENTS 6.2 — explicit select).
 const ITEM_COLUMNS =
   'id,slug,title,client_brand,category,description,alt_text,offer_tag,' +
-  'featured,published,sort_order,created_at,' +
-  'portfolio_images(id,storage_path,image_order,width,height)';
+  'featured,published,sort_order,created_at,media,' +
+  'portfolio_images(id,storage_path,image_order,width,height,media_type,mime_type,file_size,thumbnail_url)';
 
 // Categories resolved on the last read, used for synchronous label lookups.
 let liveCategories = [];
@@ -328,6 +328,17 @@ function _getStoredCategories() {
  * @returns {object} The normalised item.
  */
 function _normalizeItem(row) {
+  const images = (row.portfolio_images || []).map(img => {
+    const isVideo = img.media_type === 'video' ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(img.storage_path || '') ||
+      (img.mime_type && img.mime_type.startsWith('video/'));
+    return {
+      ...img,
+      media_type: isVideo ? 'video' : 'image',
+      isVideo
+    };
+  });
+
   return {
     id: row.id,
     slug: row.slug,
@@ -340,7 +351,8 @@ function _normalizeItem(row) {
     featured: row.featured !== false,
     published: row.published !== false,
     sort_order: row.sort_order,
-    portfolio_images: row.portfolio_images || []
+    media: row.media || null,
+    portfolio_images: images
   };
 }
 

@@ -160,18 +160,41 @@ function createWorkCard(item) {
   imgWrapper.style.aspectRatio = '4 / 3';
   imgWrapper.style.overflow = 'hidden';
 
-  const image = document.createElement('img');
   const coverImg = item.portfolio_images && item.portfolio_images.length > 0
     ? item.portfolio_images[0]
     : null;
 
-  image.src = coverImg ? coverImg.storage_path : '/assets/brand/monogram.png';
-  image.alt = item.alt_text || item.title;
-  image.loading = 'lazy';
-  image.style.width = '100%';
-  image.style.height = '100%';
-  image.style.objectFit = 'cover';
-  imgWrapper.appendChild(image);
+  const isCoverVideo = coverImg && (
+    coverImg.isVideo ||
+    coverImg.media_type === 'video' ||
+    /\.(mp4|webm|mov)(\?.*)?$/i.test(coverImg.storage_path || '') ||
+    (coverImg.mime_type && coverImg.mime_type.startsWith('video/'))
+  );
+
+  if (isCoverVideo) {
+    const video = document.createElement('video');
+    video.src = coverImg.storage_path;
+    video.muted = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('preload', 'metadata');
+    video.loop = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    // Auto-play on hover for a nice effect
+    imgWrapper.addEventListener('mouseenter', () => video.play());
+    imgWrapper.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+    imgWrapper.appendChild(video);
+  } else {
+    const image = document.createElement('img');
+    image.src = coverImg ? coverImg.storage_path : '/assets/brand/monogram.png';
+    image.alt = item.alt_text || item.title;
+    image.loading = 'lazy';
+    image.style.width = '100%';
+    image.style.height = '100%';
+    image.style.objectFit = 'cover';
+    imgWrapper.appendChild(image);
+  }
   article.appendChild(imgWrapper);
 
   const content = document.createElement('div');

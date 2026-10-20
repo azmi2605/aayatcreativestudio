@@ -76,7 +76,7 @@ export async function adminFetchAllItems() {
   const client = await getSupabaseClient();
   const { data, error } = await client
     .from('portfolio_items')
-    .select('id, slug, title, client_brand, category, description, alt_text, offer_tag, featured, published, sort_order, created_at, portfolio_images ( id, storage_path, image_order, width, height )')
+    .select('id, slug, title, client_brand, category, description, alt_text, offer_tag, featured, published, sort_order, created_at, media, portfolio_images ( id, storage_path, image_order, width, height, media_type, mime_type, file_size, thumbnail_url )')
     .order('sort_order', { ascending: false });
   if (error) throw error;
   return data || [];
@@ -127,6 +127,7 @@ export async function adminInsertImage(imageData) {
 }
 
 // ─── CATEGORIES (shared list for the admin portal and the client site) ─────
+
 
 /** Fetch the shared category list, ordered for display. */
 export async function adminFetchCategories() {
@@ -190,8 +191,8 @@ export async function adminToggleCategoryActive(value, isActive) {
 
 // ─── STORAGE ────────────────────────────────────────────────────────────────
 
-/** Upload an image File to Supabase Storage. Returns { path, publicUrl }. */
-export async function uploadPortfolioImage(file, itemSlug) {
+/** Upload media file (image or video) to Supabase Storage. Returns { path, publicUrl }. */
+export async function uploadPortfolioMedia(file, itemSlug) {
   const client = await getSupabaseClient();
   const config = getConfig();
   const ext = file.name.split('.').pop().toLowerCase();
@@ -206,6 +207,9 @@ export async function uploadPortfolioImage(file, itemSlug) {
   const publicUrl = `${config.supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${data.path}`;
   return { path: data.path, publicUrl };
 }
+
+/** Backward-compatible alias for uploadPortfolioMedia. */
+export const uploadPortfolioImage = uploadPortfolioMedia;
 
 /** Remove a file from Storage by its path. */
 export async function deleteStorageImage(storagePath) {

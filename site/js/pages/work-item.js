@@ -105,15 +105,33 @@ function renderItem(container, item) {
     figure.style.borderRadius = 'var(--cs-radius-sm)';
     figure.style.overflow = 'hidden';
 
-    const img = document.createElement('img');
-    img.src = imgObj.storage_path;
-    img.alt = item.alt_text ? `${item.alt_text} (View ${idx + 1})` : item.title;
-    img.loading = idx === 0 ? 'eager' : 'lazy';
-    img.style.width = '100%';
-    img.style.height = 'auto';
-    img.style.display = 'block';
+    const isVideo = imgObj.isVideo ||
+      imgObj.media_type === 'video' ||
+      /\.(mp4|webm|mov)(\?.*)?$/i.test(imgObj.storage_path || '') ||
+      (imgObj.mime_type && imgObj.mime_type.startsWith('video/'));
 
-    figure.appendChild(img);
+    if (isVideo) {
+      const video = document.createElement('video');
+      video.src = imgObj.storage_path;
+      video.controls = true;
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('preload', idx === 0 ? 'auto' : 'metadata');
+      video.style.width = '100%';
+      video.style.height = 'auto';
+      video.style.display = 'block';
+      figure.appendChild(video);
+    } else {
+      const img = document.createElement('img');
+      img.src = imgObj.storage_path;
+      img.alt = item.alt_text ? `${item.alt_text} (View ${idx + 1})` : item.title;
+      img.loading = idx === 0 ? 'eager' : 'lazy';
+      img.style.width = '100%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      figure.appendChild(img);
+    }
+
     mediaCol.appendChild(figure);
   });
   layout.appendChild(mediaCol);

@@ -315,14 +315,19 @@
         </div>
 
         <div class="form-group">
-          <label class="text-small" style="font-weight: 500;">Product Image *</label>
+          <label class="text-small" style="font-weight: 500;">Product Image or Video *</label>
           <div id="image-drop-area" class="image-preview-box">
-            <span id="image-placeholder-text" class="text-small text-muted">&#128247; Click or drag image file
-              here</span>
+            <span id="image-placeholder-text" class="text-small text-muted">&#128247; &#127916; Click or drag image or video file here</span>
             <img id="image-preview" style="display: none;" alt="Product preview">
-            <input type="file" id="prod-image-file" accept="image/*" style="display: none;">
+            <video id="video-preview" controls muted playsinline style="display: none; max-height: 100%; max-width: 100%;"></video>
+            <button type="button" id="btn-clear-media" class="btn btn-secondary btn-compact" style="display: none; position: absolute; top: 8px; right: 8px; z-index: 10; font-size: 0.75rem; padding: 4px 8px; background: rgba(255,255,255,0.9);">✕ Remove</button>
+            <input type="file" id="prod-image-file" accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,image/jpeg,image/png,image/webp,video/mp4,video/webm" style="display: none;">
           </div>
-          <span class="text-small text-muted" style="margin-top: 4px;">Supports JPG, PNG, WebP (Max 5MB)</span>
+          <div id="media-upload-progress" style="display: none; width: 100%; height: 4px; background: var(--cs-color-line-strong, #ccc); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+            <div id="media-upload-bar" style="width: 0%; height: 100%; background: var(--cs-color-brown, #b45309); transition: width 0.3s ease;"></div>
+          </div>
+          <span class="text-small text-muted" style="margin-top: 4px;">Images: JPG, PNG, WebP (max 5MB). Videos: MP4, WebM (max 50MB).</span>
+          <span id="media-error-text" style="display: none; color: var(--cs-color-error, #dc2626); font-size: 0.75rem; margin-top: 4px;"></span>
         </div>
 
         <div class="form-group">

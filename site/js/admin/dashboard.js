@@ -20,7 +20,7 @@ import {
   adminInsertImage,
   adminUpdateItem,
   adminDeleteItem,
-  uploadPortfolioImage,
+  uploadPortfolioMedia,
   deleteStorageImage,
   adminFetchOffers,
   adminSaveOffers,
@@ -40,8 +40,9 @@ let selectedImageFile = null;
 let statusHideTimer = null;
 let statusMessageId = 0;
 
-// The portfolio bucket rejects files above 5 MB.
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+// Upload size limits (match Supabase Storage bucket policy)
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;   // 5 MB for images
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;  // 50 MB for videos
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOT
@@ -315,10 +316,18 @@ function initModals() {
 function resetProductForm() {
   document.getElementById('product-form').reset();
   selectedImageFile = null;
-  const previewImg = document.getElementById('image-preview');
-  const placeholder = document.getElementById('image-placeholder-text');
-  if (previewImg) { previewImg.style.display = 'none'; previewImg.src = ''; }
-  if (placeholder) placeholder.style.display = 'block';
+  const previewImg   = document.getElementById('image-preview');
+  const videoPreview = document.getElementById('video-preview');
+  const placeholder  = document.getElementById('image-placeholder-text');
+  const clearBtn     = document.getElementById('btn-clear-media');
+  const errText      = document.getElementById('media-error-text');
+  const progressBar  = document.getElementById('media-upload-progress');
+  if (previewImg)   { previewImg.style.display = 'none'; previewImg.src = ''; }
+  if (videoPreview) { videoPreview.style.display = 'none'; videoPreview.src = ''; }
+  if (placeholder)  placeholder.style.display = 'block';
+  if (clearBtn)     clearBtn.style.display = 'none';
+  if (errText)      { errText.style.display = 'none'; errText.textContent = ''; }
+  if (progressBar)  progressBar.style.display = 'none';
 
   // Reset custom category box
   const newCatBox = document.getElementById('new-category-box');
@@ -332,17 +341,54 @@ function resetProductForm() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// IMAGE UPLOAD
+// MEDIA UPLOAD (images + videos)
 // ─────────────────────────────────────────────────────────────────────────────
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm']);
+const ALLOWED_IMAGE_EXTS  = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const ALLOWED_VIDEO_EXTS  = new Set(['.mp4', '.webm']);
+
+function _getMediaExt(file) {
+  return '.' + file.name.split('.').pop().toLowerCase();
+}
+
+function _isValidMedia(file) {
+  const ext = _getMediaExt(file);
+  if (ALLOWED_IMAGE_TYPES.has(file.type) || ALLOWED_IMAGE_EXTS.has(ext)) return 'image';
+  if (ALLOWED_VIDEO_TYPES.has(file.type) || ALLOWED_VIDEO_EXTS.has(ext)) return 'video';
+  return null;
+}
+
 function initImageUpload() {
-  const dropArea = document.getElementById('image-drop-area');
-  const fileInput = document.getElementById('prod-image-file');
-  const previewImg = document.getElementById('image-preview');
+  const dropArea    = document.getElementById('image-drop-area');
+  const fileInput   = document.getElementById('prod-image-file');
+  const previewImg  = document.getElementById('image-preview');
+  const videoPreview= document.getElementById('video-preview');
   const placeholder = document.getElementById('image-placeholder-text');
+  const clearBtn    = document.getElementById('btn-clear-media');
+  const errText     = document.getElementById('media-error-text');
 
   if (!dropArea || !fileInput) return;
 
-  dropArea.onclick = () => fileInput.click();
+  // Click on drop area opens file picker (but not if clicking the Remove button)
+  dropArea.addEventListener('click', e => {
+    if (e.target === clearBtn || clearBtn.contains(e.target)) return;
+    fileInput.click();
+  });
+
+  // Remove button
+  if (clearBtn) {
+    clearBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      selectedImageFile = null;
+      fileInput.value = '';
+      if (previewImg)   { previewImg.style.display = 'none'; previewImg.src = ''; }
+      if (videoPreview) { videoPreview.style.display = 'none'; videoPreview.src = ''; }
+      if (placeholder)  placeholder.style.display = 'block';
+      clearBtn.style.display = 'none';
+      if (errText) { errText.style.display = 'none'; errText.textContent = ''; }
+    });
+  }
 
   dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.style.borderColor = 'var(--cs-color-brown)'; });
   dropArea.addEventListener('dragleave', () => { dropArea.style.borderColor = ''; });
@@ -350,27 +396,61 @@ function initImageUpload() {
     e.preventDefault();
     dropArea.style.borderColor = '';
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) handleImageFile(file, previewImg, placeholder);
+    if (file) handleMediaFile(file, previewImg, videoPreview, placeholder, clearBtn, errText);
   });
 
   fileInput.onchange = e => {
     const file = e.target.files[0];
-    if (file) handleImageFile(file, previewImg, placeholder);
+    if (file) handleMediaFile(file, previewImg, videoPreview, placeholder, clearBtn, errText);
   };
 }
 
-function handleImageFile(file, previewImg, placeholder) {
-  if (file.size > MAX_IMAGE_BYTES) {
-    showStatus('Image must be under 5 MB.', 'error');
+function handleMediaFile(file, previewImg, videoPreview, placeholder, clearBtn, errText) {
+  const mediaKind = _isValidMedia(file);
+
+  function _showErr(msg) {
+    if (errText) { errText.textContent = msg; errText.style.display = 'block'; }
+    else showStatus(msg, 'error');
+  }
+
+  if (!mediaKind) {
+    _showErr('Unsupported file type. Please use JPG, PNG, WebP, MP4, or WebM.');
     return;
   }
+  if (mediaKind === 'image' && file.size > MAX_IMAGE_BYTES) {
+    _showErr('Image must be under 5 MB.');
+    return;
+  }
+  if (mediaKind === 'video' && file.size > MAX_VIDEO_BYTES) {
+    _showErr('Video must be under 50 MB.');
+    return;
+  }
+
+  // Clear previous errors and hide both previews first
+  if (errText) { errText.style.display = 'none'; errText.textContent = ''; }
+  if (previewImg)   { previewImg.style.display = 'none'; previewImg.src = ''; }
+  if (videoPreview) { videoPreview.style.display = 'none'; videoPreview.src = ''; }
+
   selectedImageFile = file;
-  const reader = new FileReader();
-  reader.onload = evt => {
-    if (previewImg) { previewImg.src = evt.target.result; previewImg.style.display = 'block'; }
+
+  if (mediaKind === 'image') {
+    const reader = new FileReader();
+    reader.onload = evt => {
+      if (previewImg)  { previewImg.src = evt.target.result; previewImg.style.display = 'block'; }
+      if (placeholder) placeholder.style.display = 'none';
+      if (clearBtn)    clearBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // Video: use object URL for preview
+    const objUrl = URL.createObjectURL(file);
+    if (videoPreview) {
+      videoPreview.src = objUrl;
+      videoPreview.style.display = 'block';
+    }
     if (placeholder) placeholder.style.display = 'none';
-  };
-  reader.readAsDataURL(file);
+    if (clearBtn)    clearBtn.style.display = 'block';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -438,18 +518,31 @@ function initProductForm() {
         published: true
       });
 
-      // 2. Upload image to Storage if provided
+      // 2. Upload media (image or video) to Storage if provided
       if (selectedImageFile) {
-        const uploaded = await uploadPortfolioImage(selectedImageFile, slug);
+        // Show progress bar
+        const progressWrap = document.getElementById('media-upload-progress');
+        const progressBar  = document.getElementById('media-upload-bar');
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar)  progressBar.style.width = '30%';
+
+        const uploaded = await uploadPortfolioMedia(selectedImageFile, slug);
+        if (progressBar) progressBar.style.width = '80%';
+
+        const mediaKind = _isValidMedia(selectedImageFile);
         const uploadedItem = await adminInsertImage({
           portfolio_item_id: savedItem.id,
           storage_path: uploaded.publicUrl,
           image_order: 1,
-          width: 1200,
-          height: 900
+          width: mediaKind === 'image' ? 1200 : null,
+          height: mediaKind === 'image' ? 900 : null,
+          media_type: mediaKind || 'image',
+          mime_type: selectedImageFile.type || null,
+          file_size: selectedImageFile.size || null
         });
+        if (progressBar) progressBar.style.width = '100%';
         if (!uploadedItem) {
-          throw new Error('The image record was not stored.');
+          throw new Error('The media record was not stored.');
         }
       }
 
