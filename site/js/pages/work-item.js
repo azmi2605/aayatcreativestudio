@@ -4,6 +4,7 @@
  */
 
 import { fetchPublishedItemBySlug, fetchPublishedItems, fetchCategories, getCategoryLabel } from '../api/portfolio.js';
+import { INSTAGRAM_DM_URL } from '../config.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('item-details-container');
@@ -183,7 +184,9 @@ function renderItem(container, item) {
   ctaBox.appendChild(ctaText);
 
   const ctaBtn = document.createElement('a');
-  ctaBtn.href = '/contact/';
+  ctaBtn.href = INSTAGRAM_DM_URL;
+  ctaBtn.target = '_blank';
+  ctaBtn.rel = 'noopener noreferrer';
   ctaBtn.className = 'btn btn-primary';
   ctaBtn.style.width = '100%';
   ctaBtn.textContent = 'Start a Project';

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,30 +20,36 @@
       background-color: var(--cs-color-surface);
       border-bottom: var(--cs-border-default);
     }
+
     .stat-card {
       background-color: var(--cs-color-surface);
       border: var(--cs-border-default);
       border-radius: var(--cs-radius-sm);
       padding: var(--cs-space-5);
     }
+
     .admin-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: var(--cs-space-4);
       background-color: var(--cs-color-surface);
     }
-    .admin-table th, .admin-table td {
+
+    .admin-table th,
+    .admin-table td {
       padding: var(--cs-space-3) var(--cs-space-4);
       text-align: left;
       border-bottom: var(--cs-border-default);
       font-size: var(--cs-text-small);
       vertical-align: middle;
     }
+
     .admin-table th {
       font-weight: 500;
       color: var(--cs-color-ink-muted);
       background-color: var(--cs-color-bg);
     }
+
     .badge {
       display: inline-block;
       padding: 2px 8px;
@@ -50,14 +57,17 @@
       font-size: 0.75rem;
       font-weight: 500;
     }
+
     .badge-new {
       background-color: var(--cs-color-gold-tint);
       color: var(--cs-color-gold-deep);
     }
+
     .badge-pub {
       background-color: var(--cs-color-success-tint);
       color: var(--cs-color-success);
     }
+
     .badge-offer {
       background-color: #FEE2E2;
       color: #991B1B;
@@ -78,6 +88,7 @@
       z-index: 1000;
       padding: var(--cs-space-4);
     }
+
     .modal-card {
       background-color: var(--cs-color-surface);
       border-radius: var(--cs-radius-sm);
@@ -88,31 +99,39 @@
       padding: var(--cs-space-6);
       box-shadow: var(--cs-shadow-dialog);
     }
+
     .form-group {
       margin-bottom: var(--cs-space-4);
       display: flex;
       flex-direction: column;
       gap: var(--cs-space-1);
     }
-    .form-input, .form-select, .form-textarea {
+
+    .form-input,
+    .form-select,
+    .form-textarea {
       padding: var(--cs-space-3);
       border: var(--cs-border-strong);
       border-radius: var(--cs-radius-sm);
       font-size: var(--cs-text-small);
       width: 100%;
     }
+
     .modal-card-compact {
       max-width: 420px;
     }
+
     .confirm-modal-message {
       margin-top: var(--cs-space-2);
     }
+
     .confirm-modal-actions {
       display: flex;
       gap: var(--cs-space-3);
       justify-content: flex-end;
       margin-top: var(--cs-space-5);
     }
+
     .image-preview-box {
       width: 100%;
       height: 160px;
@@ -128,6 +147,7 @@
       overflow: hidden;
       margin-top: var(--cs-space-2);
     }
+
     .image-preview-box img {
       max-height: 100%;
       max-width: 100%;
@@ -135,12 +155,13 @@
     }
   </style>
 </head>
+
 <body style="background-color: var(--cs-color-bg);">
   <!-- Admin Header -->
   <header class="admin-nav-bar">
     <div style="display: flex; align-items: center; gap: var(--cs-space-3);">
       <img src="/assets/brand/monogram.png" alt="AayatCreativeStudio" width="32" height="32">
-      <span style="font-weight: 600; font-size: 1.125rem;">AayatCreativeStudio Studio Dashboard</span>
+      <span style="font-weight: 600; font-size: 1.125rem;">AayatCreativeStudio Dashboard</span>
     </div>
     <div style="display: flex; align-items: center; gap: var(--cs-space-4);">
       <a href="/" target="_blank" class="btn-text" style="font-size: var(--cs-text-small);">View Public Site &#8599;</a>
@@ -150,10 +171,12 @@
 
   <main class="container" style="padding-top: var(--cs-space-7); padding-bottom: var(--cs-space-8);">
     <!-- Overview Cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--cs-space-5); margin-bottom: var(--cs-space-7);">
+    <div
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--cs-space-5); margin-bottom: var(--cs-space-7);">
       <div class="stat-card">
         <span class="text-small text-muted">Active Offers & Promos</span>
-        <h2 id="offers-count" style="font-size: 2rem; margin-top: var(--cs-space-2); color: var(--cs-color-brown);">1 Active</h2>
+        <h2 id="offers-count" style="font-size: 2rem; margin-top: var(--cs-space-2); color: var(--cs-color-brown);">1
+          Active</h2>
       </div>
       <div class="stat-card">
         <span class="text-small text-muted">Showcase Products / Projects</span>
@@ -167,7 +190,8 @@
 
     <!-- Active Offers / Promotional Banners Section -->
     <section style="margin-bottom: var(--cs-space-8);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-3);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-3);">
         <div>
           <h2>Offers & Promotional Deals</h2>
           <p class="text-small text-muted">Manage seasonal deals, discounts, and package offers displayed to clients</p>
@@ -196,7 +220,8 @@
 
     <!-- Published Products & Creative Works Management -->
     <section style="margin-bottom: var(--cs-space-8);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-3);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-3);">
         <div>
           <h2>Product Showcase & Creative Catalog</h2>
           <p class="text-small text-muted">Add new product images, creative details, client brand, and categories</p>
@@ -228,15 +253,18 @@
   <!-- MODAL: ADD PRODUCT / WORK -->
   <div id="product-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-prod-title">
     <div class="modal-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-4);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-4);">
         <h3 id="modal-prod-title">Add New Product Image & Details</h3>
-        <button id="close-prod-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        <button id="close-prod-modal"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
       </div>
 
       <form id="product-form">
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Product Title *</label>
-          <input type="text" id="prod-title" class="form-input" required placeholder="e.g. Aura Radiant Botanical Serum Ad">
+          <input type="text" id="prod-title" class="form-input" required
+            placeholder="e.g. Aura Radiant Botanical Serum Ad">
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--cs-space-3);">
@@ -247,28 +275,37 @@
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <label class="text-small" style="font-weight: 500; margin-bottom: 0;">Category *</label>
-              <button type="button" id="btn-show-add-cat" class="btn-text" style="font-size: 0.75rem; color: var(--cs-color-brown, #b45309); cursor: pointer; background: none; border: none; padding: 0; font-weight: 600;">+ Add Category</button>
+              <button type="button" id="btn-show-add-cat" class="btn-text"
+                style="font-size: 0.75rem; color: var(--cs-color-brown, #b45309); cursor: pointer; background: none; border: none; padding: 0; font-weight: 600;">+
+                Add Category</button>
             </div>
             <!-- Select + remove-category button side by side -->
             <div class="category-select-row">
               <select id="prod-category" class="form-select"></select>
-              <button type="button" id="btn-remove-cat" class="btn-icon"
-                title="Remove category" aria-label="Remove category" disabled>
-                <svg class="btn-icon-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
-                  aria-hidden="true" focusable="false">
-                  <path d="M4 7h16M10 11v6M14 11v6M5 7l1 12.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5L19 7M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+              <button type="button" id="btn-remove-cat" class="btn-icon" title="Remove category"
+                aria-label="Remove category" disabled>
+                <svg class="btn-icon-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"
+                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                  <path
+                    d="M4 7h16M10 11v6M14 11v6M5 7l1 12.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5L19 7M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2">
+                  </path>
                 </svg>
               </button>
             </div>
             <!-- Inline Add New Category Box -->
-            <div id="new-category-box" style="display: none; margin-top: 6px; padding: 8px; background: rgba(0,0,0,0.03); border: 1px dashed var(--cs-color-border, #ccc); border-radius: var(--cs-radius-sm, 4px);">
+            <div id="new-category-box"
+              style="display: none; margin-top: 6px; padding: 8px; background: rgba(0,0,0,0.03); border: 1px dashed var(--cs-color-border, #ccc); border-radius: var(--cs-radius-sm, 4px);">
               <div style="display: flex; gap: 6px;">
-                <input type="text" id="new-cat-input" class="form-input" placeholder="e.g. Brand Identity, Packaging" style="font-size: 0.85rem; padding: 6px 10px;">
-                <button type="button" id="btn-save-new-cat" class="btn btn-primary btn-compact" style="font-size: 0.8rem; padding: 6px 12px; white-space: nowrap;">Add</button>
-                <button type="button" id="btn-cancel-new-cat" class="btn btn-secondary btn-compact" style="font-size: 0.8rem; padding: 6px 8px;" title="Cancel">✕</button>
+                <input type="text" id="new-cat-input" class="form-input" placeholder="e.g. Brand Identity, Packaging"
+                  style="font-size: 0.85rem; padding: 6px 10px;">
+                <button type="button" id="btn-save-new-cat" class="btn btn-primary btn-compact"
+                  style="font-size: 0.8rem; padding: 6px 12px; white-space: nowrap;">Add</button>
+                <button type="button" id="btn-cancel-new-cat" class="btn btn-secondary btn-compact"
+                  style="font-size: 0.8rem; padding: 6px 8px;" title="Cancel">✕</button>
               </div>
-              <span id="new-cat-error" style="display: none; color: var(--cs-color-error, #dc2626); font-size: 0.75rem; margin-top: 4px;">Please enter a category name.</span>
+              <span id="new-cat-error"
+                style="display: none; color: var(--cs-color-error, #dc2626); font-size: 0.75rem; margin-top: 4px;">Please
+                enter a category name.</span>
             </div>
             <!-- The shared category list, with a remove control per entry.
                  Rendering is done by dashboard.js from the categories table. -->
@@ -280,7 +317,8 @@
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Product Image *</label>
           <div id="image-drop-area" class="image-preview-box">
-            <span id="image-placeholder-text" class="text-small text-muted">&#128247; Click or drag image file here</span>
+            <span id="image-placeholder-text" class="text-small text-muted">&#128247; Click or drag image file
+              here</span>
             <img id="image-preview" style="display: none;" alt="Product preview">
             <input type="file" id="prod-image-file" accept="image/*" style="display: none;">
           </div>
@@ -289,12 +327,14 @@
 
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Associated Offer / Deal (Optional)</label>
-          <input type="text" id="prod-offer" class="form-input" placeholder="e.g. 15% OFF Launch Special or Free Social Resizing">
+          <input type="text" id="prod-offer" class="form-input"
+            placeholder="e.g. 15% OFF Launch Special or Free Social Resizing">
         </div>
 
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Creative Description *</label>
-          <textarea id="prod-desc" class="form-textarea" rows="3" required placeholder="Describe the design concept, conversion focus, or campaign specifics..."></textarea>
+          <textarea id="prod-desc" class="form-textarea" rows="3" required
+            placeholder="Describe the design concept, conversion focus, or campaign specifics..."></textarea>
         </div>
 
         <div style="display: flex; gap: var(--cs-space-3); justify-content: flex-end; margin-top: var(--cs-space-5);">
@@ -308,15 +348,18 @@
   <!-- MODAL: ADD OFFER -->
   <div id="offer-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-offer-title">
     <div class="modal-card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-4);">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--cs-space-4);">
         <h3 id="modal-offer-title">Create Promotional Offer</h3>
-        <button id="close-offer-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        <button id="close-offer-modal"
+          style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
       </div>
 
       <form id="offer-form">
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Offer Headline *</label>
-          <input type="text" id="offer-title" class="form-input" required placeholder="e.g. Festive Campaign Bundle Offer">
+          <input type="text" id="offer-title" class="form-input" required
+            placeholder="e.g. Festive Campaign Bundle Offer">
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--cs-space-3);">
@@ -326,13 +369,15 @@
           </div>
           <div class="form-group">
             <label class="text-small" style="font-weight: 500;">Discount / Benefit *</label>
-            <input type="text" id="offer-discount" class="form-input" required placeholder="e.g. 20% OFF or Free Carousel Set">
+            <input type="text" id="offer-discount" class="form-input" required
+              placeholder="e.g. 20% OFF or Free Carousel Set">
           </div>
         </div>
 
         <div class="form-group">
           <label class="text-small" style="font-weight: 500;">Expiry Date / Terms</label>
-          <input type="text" id="offer-expiry" class="form-input" placeholder="e.g. Valid until end of month / First 5 brands">
+          <input type="text" id="offer-expiry" class="form-input"
+            placeholder="e.g. Valid until end of month / First 5 brands">
         </div>
 
         <div style="display: flex; gap: var(--cs-space-3); justify-content: flex-end; margin-top: var(--cs-space-5);">
@@ -344,7 +389,8 @@
   </div>
 
   <!-- MODAL: CONFIRM -->
-  <div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+  <div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title"
+    aria-describedby="confirm-modal-message">
     <div class="modal-card modal-card-compact">
       <h3 id="confirm-modal-title">Remove category?</h3>
       <p id="confirm-modal-message" class="text-small text-muted confirm-modal-message"></p>
@@ -358,4 +404,5 @@
   <!-- Supabase-connected Admin Dashboard Module -->
   <script type="module" src="/js/admin/dashboard.js"></script>
 </body>
+
 </html>

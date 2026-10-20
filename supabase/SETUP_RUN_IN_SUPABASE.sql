@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
   value TEXT NOT NULL UNIQUE CHECK (value ~ '^[a-z0-9_]+$'),
   label TEXT NOT NULL CHECK (length(trim(label)) BETWEEN 1 AND 60),
   sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

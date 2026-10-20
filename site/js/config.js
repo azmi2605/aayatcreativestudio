@@ -11,6 +11,11 @@
 const SUPABASE_URL = 'https://dkqpjgptckcsxtsxyyuy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_RudiMLiPlMZuUkQL6_DZaA_Jtix3YWH';
 
+// Single source of truth for the "Start a Project" call-to-action link.
+// Change here to update every CTA across the site (header, hero, footer,
+// work-item pages). No code hunting required.
+export const INSTAGRAM_DM_URL = 'https://www.instagram.com/direct/t/18137977882528127/';
+
 const CONFIGS = {
   // Local development — points to the REAL Supabase cloud project
   localhost: {

@@ -26,7 +26,9 @@ import {
   adminSaveOffers,
   adminFetchCategories,
   adminInsertCategory,
-  adminDeleteCategory
+  adminDeleteCategory,
+  adminUpdateCategory,
+  adminToggleCategoryActive
 } from './supabase-client.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,6 +85,28 @@ async function verifyAdminAccess() {
     console.warn('Admin access check failed:', e);
     return false;
   }
+}
+
+/**
+ * Re-verifies admin access immediately before a write operation.
+ * Sessions can expire between page load and a write; reads may still work
+ * under the public SELECT policy while writes require an authenticated admin.
+ * Shows a specific "session expired" message and redirects to login when access
+ * is lost, rather than a generic "could not save" message.
+ * @returns {Promise<boolean>} True when write access is confirmed.
+ */
+async function reverifyAdminAccess() {
+  const authed = await verifyAdminAccess();
+  if (!authed) {
+    const session = await getAdminSession();
+    if (!session) {
+      showStatus('Session expired — please sign in again.', 'error');
+    } else {
+      showStatus('Admin access lost — please sign in again.', 'error');
+    }
+    setTimeout(() => { window.location.href = '/admin/'; }, 1500);
+  }
+  return authed;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -642,14 +666,39 @@ async function refreshCategories() {
 
 /**
  * Adds a category to the shared list so the client site sees it too.
- * Throws when the shared write fails, so the caller can tell the admin the
- * category did not reach the client site.
+ * Performs a case-insensitive duplicate check on the slug before writing to
+ * the database so the admin gets a friendly message instead of a constraint
+ * violation. Throws when the shared write fails, so the caller can tell the
+ * admin the category did not reach the client site.
  * @param {string} label - The display name of the category.
- * @param {string} value - The stored value of the category.
+ * @param {string} value - The stored value (slug) of the category.
  * @returns {Promise<object>} The inserted row.
  */
 async function saveCustomCategory(label, value) {
-  const inserted = await adminInsertCategory({ label, value, sort_order: allCategories.length });
+  const trimmedLabel = String(label || '').trim();
+  if (!trimmedLabel) {
+    const err = new Error('EMPTY_CATEGORY');
+    throw err;
+  }
+  const trimmedValue = String(value || '').trim().toLowerCase();
+
+  // Case-insensitive duplicate prevention on both value (slug) and label.
+  const existing = allCategories.find(c => 
+    String(c.value || '').toLowerCase() === trimmedValue ||
+    String(c.label || '').trim().toLowerCase() === trimmedLabel.toLowerCase()
+  );
+  if (existing) {
+    const err = new Error('DUPLICATE_CATEGORY');
+    err.category = existing;
+    throw err;
+  }
+
+  const inserted = await adminInsertCategory({
+    label: trimmedLabel,
+    value: trimmedValue,
+    sort_order: allCategories.length,
+    is_active: true
+  });
   allCategories = await adminFetchCategories();
   mirrorCategoriesToLocalStorage(allCategories);
   return inserted;
@@ -669,11 +718,14 @@ async function removeCategory(value) {
   mirrorCategoriesToLocalStorage(list);
 }
 
-/** Every category the admin can pick — the shared list, mirror as fallback. */
+/** Every active category the admin can pick — shared list, mirror as fallback.
+ * Inactive (soft-deleted) categories are excluded so new designs can't be
+ * assigned to a category that no longer shows on the client site.
+ */
 function getAvailableCategories() {
   const mirror = getStoredCustomCategories();
   const source = allCategories.length
-    ? allCategories
+    ? allCategories.filter(c => c.is_active !== false)
     : (mirror.length ? mirror : DEFAULT_CATEGORIES);
 
   const seen = new Set();
@@ -716,18 +768,24 @@ function getItemsUsingCategory(value) {
 }
 
 /**
- * Renders removable pill badges for every category in the shared list.
- * The list is the same one the client site uses, so a removal here removes the
- * filter button on the client site too.
+ * Renders every category in the shared list (active and soft-deleted).
+ * Each row shows the label, an active/inactive toggle (soft-delete), a rename
+ * control, and a hard-remove button that is blocked while designs reference
+ * the category. The list is the same one the client site reads, so any change
+ * here propagates to the Client Site on its next load.
  */
 function renderCustomCategoryManager() {
   const manager = document.getElementById('custom-cat-manager');
   if (!manager) return;
 
-  const sharedCats = getAvailableCategories();
+  // All categories from Supabase, mirror as fallback.
+  const allCats = allCategories.length
+    ? allCategories
+    : (getStoredCustomCategories().length ? getStoredCustomCategories() : DEFAULT_CATEGORIES);
+
   manager.innerHTML = '';
 
-  if (sharedCats.length === 0) {
+  if (allCats.length === 0) {
     manager.style.display = 'none';
     return;
   }
@@ -735,52 +793,152 @@ function renderCustomCategoryManager() {
   manager.style.display = 'block';
 
   const heading = document.createElement('p');
-  heading.style.cssText = 'font-size:0.72rem;color:var(--cs-color-ink-muted);margin:0 0 5px 0;font-weight:500;';
-  heading.textContent = 'Shared categories (click ✕ to remove):';
+  heading.style.cssText = 'font-size:0.72rem;color:var(--cs-color-ink-muted);margin:0 0 8px 0;font-weight:500;';
+  heading.textContent = 'Shared categories (same list the Client Site reads):';
   manager.appendChild(heading);
 
-  const row = document.createElement('div');
-  row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+  const listEl = document.createElement('div');
+  listEl.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+  manager.appendChild(listEl);
 
-  sharedCats.forEach(cat => {
-    const pill = document.createElement('span');
-    pill.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:var(--cs-color-gold-tint,#fffbeb);color:var(--cs-color-gold-deep,#92400e);border:1px solid var(--cs-color-gold-deep,#d97706);border-radius:20px;font-size:0.78rem;font-weight:500;';
+  allCats.forEach(cat => {
+    const isActive = cat.is_active !== false;
+    const usedBy = getItemsUsingCategory(cat.value);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
 
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = cat.label;
-    pill.appendChild(nameSpan);
+    // Label (inline edit on click)
+    const labelWrap = document.createElement('span');
+    labelWrap.style.cssText = `display:inline-flex;align-items:center;gap:5px;min-width:150px;color:${isActive ? 'var(--cs-color-brown)' : 'var(--cs-color-ink-muted)'};font-size:0.82rem;${isActive ? 'font-weight:500;' : 'text-decoration:line-through;font-weight:400;'};`;
+    const labelText = document.createElement('span');
+    labelText.textContent = cat.label;
+    labelWrap.appendChild(labelText);
 
+    if (isActive) {
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.title = `Rename "${cat.label}"`;
+      editBtn.innerHTML = '✎';
+      editBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:0.78rem;color:var(--cs-color-gold-deep,#b45309);padding:0;line-height:1;';
+      editBtn.addEventListener('click', () => renameCategory(labelWrap, labelText, cat));
+      labelWrap.appendChild(editBtn);
+    }
+
+    const statusText = document.createElement('span');
+    statusText.style.cssText = `font-size:0.7rem;${isActive ? 'color:var(--cs-color-success);' : 'color:var(--cs-color-error);'};`;
+    statusText.textContent = isActive ? 'Active' : 'Inactive';
+    labelWrap.appendChild(statusText);
+
+    row.appendChild(labelWrap);
+
+    // Active toggle (soft-delete / reactivate)
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.title = isActive ? 'Deactivate category (soft-delete)' : 'Reactivate category';
+    toggleBtn.textContent = isActive ? 'Deactivate' : 'Reactivate';
+    toggleBtn.style.cssText = `padding:2px 10px;font-size:0.72rem;border-radius:2px;border:1px solid;cursor:pointer;${isActive ? 'background:var(--cs-color-error-tint);color:var(--cs-color-error);border-color:var(--cs-color-error);' : 'background:var(--cs-color-success-tint);color:var(--cs-color-success);border-color:var(--cs-color-success);'};`;
+    toggleBtn.addEventListener('click', async () => {
+      try {
+        await adminToggleCategoryActive(cat.value, !isActive);
+        await refreshCategories();
+        const messageId = showStatus(`Category “${cat.label}” ${isActive ? 'deactivated' : 'reactivated'}.`, 'success');
+        setTimeout(() => hideStatus(messageId), 2000);
+      } catch (e) {
+        console.error('Toggle category active failed:', e);
+        showStatus(`Could not ${isActive ? 'deactivate' : 'reactivate'} “${cat.label}”.`, 'error');
+      }
+    });
+    row.appendChild(toggleBtn);
+
+    // Hard-remove button (blocked while in use)
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.title = `Remove "${cat.label}" category`;
+    removeBtn.disabled = usedBy.length > 0;
+    removeBtn.setAttribute('aria-disabled', String(usedBy.length > 0));
+    removeBtn.title = usedBy.length > 0
+      ? `“${cat.label}” is used by ${usedBy.length} design(s). Reassign or delete them first.`
+      : `Hard-delete "${cat.label}" category`;
     removeBtn.innerHTML = '✕';
-    removeBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:0.85rem;line-height:1;color:var(--cs-color-gold-deep,#92400e);padding:0 0 0 2px;display:flex;align-items:center;';
-
+    removeBtn.style.cssText = `background:none;border:none;cursor:${usedBy.length > 0 ? 'default' : 'pointer'};font-size:0.85rem;line-height:1;color:${usedBy.length > 0 ? 'var(--cs-color-ink-muted)' : 'var(--cs-color-error)'};padding:0 0 0 2px;opacity:${usedBy.length > 0 ? '0.5' : '1'};`;
     removeBtn.addEventListener('click', () => {
+      if (usedBy.length > 0) return;
       inlineConfirm(removeBtn, async () => {
         try {
           await removeCategory(cat.value);
+          await refreshCategories();
+          const messageId = showStatus(`Category “${cat.label}” hard-deleted.`, 'success');
+          setTimeout(() => hideStatus(messageId), 2000);
         } catch (e) {
           console.error('Category removal failed:', e);
           showStatus(`Could not remove “${cat.label}”.`, 'error');
-          return;
         }
-        // If the removed category is currently selected in the dropdown, fall
-        // back to the first remaining one.
-        const sel = document.getElementById('prod-category');
-        if (sel && sel.value === cat.value) sel.value = firstCategoryValue();
-        populateCategoryDropdown();
-        renderCustomCategoryManager();
-        const messageId = showStatus(`Category “${cat.label}” removed.`, 'success');
-        setTimeout(() => hideStatus(messageId), 2000);
       });
     });
+    row.appendChild(removeBtn);
 
-    pill.appendChild(removeBtn);
-    row.appendChild(pill);
+    if (usedBy.length > 0) {
+      const hint = document.createElement('span');
+      hint.style.cssText = 'font-size:0.7rem;color:var(--cs-color-ink-muted);margin-left:6px;';
+      hint.textContent = `used by ${usedBy.length} design(s)`;
+      row.appendChild(hint);
+    }
+
+    listEl.appendChild(row);
   });
+}
 
-  manager.appendChild(row);
+/**
+ * Inline rename flow for a category label.
+ * Replaces the label text with an input; pressing Enter or clicking away saves.
+ * @param {HTMLElement} labelWrap - The wrapper span containing the label.
+ * @param {HTMLElement} labelText - The text node span to edit.
+ * @param {object} cat - The category row { value, label, ... }.
+ */
+function renameCategory(labelWrap, labelText, cat) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = cat.label;
+  input.maxLength = 60;
+  input.style.cssText = 'font:inherit;font-size:0.82rem;padding:2px 4px;border:1px solid var(--cs-color-line-strong);border-radius:2px;min-width:120px;color:inherit;';
+  input.maxLength = 60;
+
+  const save = async () => {
+    const newLabel = input.value.trim();
+    if (!newLabel || newLabel === cat.label) {
+      restore();
+      return;
+    }
+    try {
+      await adminUpdateCategory(cat.value, { label: newLabel });
+      await refreshCategories();
+      labelText.textContent = newLabel;
+    } catch (e) {
+      console.error('Rename category failed:', e);
+      showStatus(`Could not rename “${cat.label}”.`, 'error');
+    } finally {
+      restore();
+    }
+  };
+
+  const restore = () => {
+    if (labelWrap.contains(input)) {
+      labelWrap.replaceChild(labelText, input);
+    }
+    input.removeEventListener('blur', save);
+    input.removeEventListener('keydown', onKey);
+  };
+
+  const onKey = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    else if (e.key === 'Escape') { restore(); }
+  };
+
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', onKey);
+
+  labelWrap.replaceChild(input, labelText);
+  input.focus();
+  input.select();
 }
 
 function populateCategoryDropdown(selectedVal = null) {
@@ -905,23 +1063,64 @@ function initCategoryControls() {
 
     const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || ('cat_' + Date.now());
 
+    // Re-verify admin write access before attempting the database write.
+    // Reads work under the public SELECT policy, but writes require an
+    // authenticated admin session; sessions can expire after page load.
+    if (!(await reverifyAdminAccess())) return;
+
     try {
       await saveCustomCategory(raw, slug);
     } catch (e) {
-      console.error('Category save failed:', e);
+      if (e && e.message === 'DUPLICATE_CATEGORY') {
+        if (errEl) {
+          errEl.textContent = 'Category already exists. Choose a different name.';
+          errEl.style.display = 'block';
+        }
+        input?.focus();
+        return;
+      }
+      if (e && e.message === 'EMPTY_CATEGORY') {
+        if (errEl) {
+          errEl.textContent = 'Please enter a category name.';
+          errEl.style.display = 'block';
+        }
+        input?.focus();
+        return;
+      }
+      // Surface auth/permission failures with a specific message; keep the
+      // raw error in the console only (no stack traces in the UI).
+      if (e && (e.status === 401 || e.status === 403 || e.code === '42501' || e.code === '42P01')) {
+        if (errEl) {
+          errEl.textContent = 'Session expired or admin access lost — please sign in again.';
+          errEl.style.display = 'block';
+        }
+        showStatus('Write rejected: admin session invalid. Redirecting to login…', 'error');
+        setTimeout(() => { window.location.href = '/admin/'; }, 1500);
+        return;
+      }
+      // Generic system error (database, network, etc.).
       if (errEl) {
         errEl.textContent = 'Could not save the category — it was not shared with the client site.';
         errEl.style.display = 'block';
       }
+      console.error('Category save failed:', e);
       const messageId = showStatus(
         `Could not save category "${raw}" — it will not appear on the client site.`, 'error');
       setTimeout(() => hideStatus(messageId), 5000);
       return;
     }
 
+    // Optimistic UI: select the new category, close the add interface, and
+    // refresh the shared-category list so the client site sees it on next load.
+    if (input) input.value = '';
     populateCategoryDropdown(slug);
     syncRemoveButtonState();
     if (box) box.style.display = 'none';
+    if (errEl) {
+      errEl.textContent = '';
+      errEl.style.display = 'none';
+    }
+    renderCustomCategoryManager();
     const messageId = showStatus(`Category "${raw}" added!`, 'success');
     setTimeout(() => hideStatus(messageId), 2500);
   };

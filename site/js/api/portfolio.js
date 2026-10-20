@@ -192,9 +192,11 @@ async function _fetchCategoriesFromSupabase() {
   }
 
   const endpoint = `${config.supabaseUrl}/rest/v1/categories` +
-    `?select=value,label,sort_order&order=sort_order.asc`;
+    `?select=value,label,sort_order,is_active` +
+    `&is_active=eq.true&order=sort_order.asc`;
 
   const resp = await fetch(endpoint, {
+    cache: 'no-store',
     headers: {
       'apikey': config.supabaseAnonKey,
       'Authorization': `Bearer ${config.supabaseAnonKey}`,

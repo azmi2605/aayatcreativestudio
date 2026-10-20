@@ -355,7 +355,7 @@ function check(name, passed, detail = '') {
     managerText.includes('Ad Creatives') && managerText.includes('Poster Design'),
     managerText.slice(0, 120));
 
-  const removeButtons = manager.querySelectorAll('button');
+  const removeButtons = manager.querySelectorAll('button').filter(b => b.textContent === '✕');
   check('every shared category has a remove control', removeButtons.length === 3, `${removeButtons.length} button(s)`);
 }
 

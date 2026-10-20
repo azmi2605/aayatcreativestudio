@@ -167,30 +167,12 @@
               <div class="form-group">
                 <label class="form-label">Services / Categories Needed * <span class="text-muted" style="font-size: 0.85em; font-weight: normal;">(Select one or multiple)</span></label>
                 <div class="category-options-grid" id="category-options">
-                  <label class="category-pill">
-                    <input type="checkbox" name="services" value="ad_creatives">
-                    <span>Ad Creatives</span>
-                  </label>
-                  <label class="category-pill">
-                    <input type="checkbox" name="services" value="poster_design">
-                    <span>Poster Design</span>
-                  </label>
-                  <label class="category-pill">
-                    <input type="checkbox" name="services" value="social_media_design">
-                    <span>Social Media Design</span>
-                  </label>
-                  <label class="category-pill">
-                    <input type="checkbox" name="services" value="other">
-                    <span>Other Creative Work</span>
-                  </label>
+                  <!-- Populated dynamically from Supabase categories (see /js/pages/contact.js) -->
                 </div>
+                <p id="category-empty" class="text-muted text-small" style="margin-top: var(--cs-space-2);display:none;">No categories available yet.</p>
                 <!-- Hidden fallback for backwards compatibility -->
                 <select id="service" name="service" style="display: none;">
                   <option value="">Select a creative focus...</option>
-                  <option value="ad_creatives">Ad Creatives</option>
-                  <option value="poster_design">Poster Design</option>
-                  <option value="social_media_design">Social Media Design</option>
-                  <option value="other">Other Creative Work</option>
                 </select>
                 <span class="form-error-msg" id="service-error">Please select at least one service category.</span>
               </div>

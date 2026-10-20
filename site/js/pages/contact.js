@@ -8,29 +8,65 @@ import { getConfig } from '../config.js';
 
 let submissionId = generateUUID();
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await initCategoryPills();
   initCharCounter();
-  initCategoryPills();
   initFormSubmission();
 });
 
-function initCategoryPills() {
-  const pills = document.querySelectorAll('.category-pill');
-  pills.forEach((pill) => {
-    const checkbox = pill.querySelector('input[type="checkbox"]');
-    if (!checkbox) return;
+async function initCategoryPills() {
+  const grid = document.getElementById('category-options');
+  const empty = document.getElementById('category-empty');
+  const select = document.getElementById('service');
+  if (!grid) return;
 
-    const updateState = () => {
-      pill.classList.toggle('active', checkbox.checked);
-      const checkedBoxes = Array.from(document.querySelectorAll('input[name="services"]:checked'));
-      const select = document.getElementById('service');
-      if (select && checkedBoxes.length > 0) {
-        select.value = checkedBoxes[0].value;
-      }
-    };
+  let categories = [];
+  try {
+    categories = await fetchCategories();
+  } catch (e) {
+    console.warn('[contact.js] Failed to fetch categories:', e.message);
+  }
 
-    checkbox.addEventListener('change', updateState);
-    updateState();
+  // Render dynamic pills + hidden fallback select from the shared list.
+  grid.innerHTML = '';
+  if (select) select.innerHTML = '<option value="">Select a creative focus...</option>';
+
+  if (categories.length === 0) {
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  categories.forEach((cat) => {
+    const value = cat.value;
+    const label = cat.label;
+
+    const pill = document.createElement('label');
+    pill.className = 'category-pill';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = 'services';
+    input.value = value;
+    const span = document.createElement('span');
+    span.textContent = label;
+    pill.appendChild(input);
+    pill.appendChild(span);
+    grid.appendChild(pill);
+
+    if (select) {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      select.appendChild(opt);
+    }
+  });
+
+  // Delegated change listener keeps the hidden fallback select in sync.
+  grid.addEventListener('change', () => {
+    const checkedBoxes = Array.from(document.querySelectorAll('input[name="services"]:checked'));
+    if (select && checkedBoxes.length > 0) {
+      select.value = checkedBoxes[0].value;
+    }
   });
 }
 

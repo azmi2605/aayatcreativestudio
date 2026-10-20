@@ -133,7 +133,7 @@ export async function adminFetchCategories() {
   const client = await getSupabaseClient();
   const { data, error } = await client
     .from('categories')
-    .select('id, value, label, sort_order')
+    .select('id, value, label, sort_order, is_active')
     .order('sort_order', { ascending: true });
   if (error) throw error;
   return data || [];
@@ -142,9 +142,13 @@ export async function adminFetchCategories() {
 /** Insert a category into the shared list. */
 export async function adminInsertCategory(category) {
   const client = await getSupabaseClient();
+  const payload = {
+    ...category,
+    is_active: category.is_active !== undefined ? !!category.is_active : true
+  };
   const { data, error } = await client
     .from('categories')
-    .insert([category])
+    .insert([payload])
     .select()
     .single();
   if (error) throw error;
@@ -156,6 +160,32 @@ export async function adminDeleteCategory(value) {
   const client = await getSupabaseClient();
   const { error } = await client.from('categories').delete().eq('value', value);
   if (error) throw error;
+}
+
+/** Rename a category (update its label) by its value. */
+export async function adminUpdateCategory(value, updates) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('categories')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('value', value)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Soft-delete / reactivate a category by flipping its is_active flag. */
+export async function adminToggleCategoryActive(value, isActive) {
+  const client = await getSupabaseClient();
+  const { data, error } = await client
+    .from('categories')
+    .update({ is_active: !!isActive, updated_at: new Date().toISOString() })
+    .eq('value', value)
+    .select('id, value, label, sort_order, is_active')
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 // ─── STORAGE ────────────────────────────────────────────────────────────────

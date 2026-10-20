@@ -219,6 +219,12 @@ input, button, textarea, select {
   padding-bottom: var(--cs-section-space);
 }
 
+/* Hero Section: tighter header-to-hero gap on the landing page */
+.hero-section {
+  padding-top: clamp(32px, 5vw, 64px);
+  padding-bottom: clamp(32px, 5vw, 64px);
+}
+
 /* ==========================================================================
    5. Reduced Motion Override (DESIGN 13, 15)
    ========================================================================== */
